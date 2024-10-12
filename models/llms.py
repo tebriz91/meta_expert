@@ -9,12 +9,9 @@ from langsmith.run_helpers import traceable
 from typing import List, Dict, Any
 from utils.logging import log_function, setup_logging
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-from config.load_configs import load_config
 
 setup_logging(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-load_config(config_path)
 client = Client()
 
 class BaseModel:
@@ -54,9 +51,7 @@ class BaseModel:
 class MistralModel(BaseModel):
     def __init__(self, temperature: float, model: str, json_response: bool, max_retries: int = 3, retry_delay: int = 1):
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-        load_config(config_path)
-        self.api_key = os.environ.get("MISTRAL_API_KEY")
+        self.api_key = os.getenv("MISTRAL_API_KEY")
         self.headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -123,9 +118,7 @@ class ClaudeModel(BaseModel):
         retry_delay: int = 1,
     ):
         super().__init__(temperature, model, json_response, prompt_caching, max_retries, retry_delay)
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-        load_config(config_path)
-        self.api_key = os.environ.get("ANTHROPIC_API_KEY")
+        self.api_key = os.getenv("ANTHROPIC_API_KEY")
         self.headers = {
             'Content-Type': 'application/json',
             'x-api-key': self.api_key,
@@ -196,9 +189,7 @@ class ClaudeModel(BaseModel):
 class GeminiModel(BaseModel):
     def __init__(self, temperature: float, model: str, json_response: bool, max_retries: int = 3, retry_delay: int = 1):
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-        load_config(config_path)
-        self.api_key = os.environ.get("GEMINI_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY")
         self.headers = {
             'Content-Type': 'application/json'
         }
@@ -267,9 +258,7 @@ class GeminiModel(BaseModel):
 class GroqModel(BaseModel):
     def __init__(self, temperature: float, model: str, json_response: bool, max_retries: int = 3, retry_delay: int = 1):
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-        load_config(config_path)
-        self.api_key = os.environ.get("GROQ_API_KEY")
+        self.api_key = os.getenv("GROQ_API_KEY")
         self.headers = {
             'Content-Type': 'application/json', 
             'Authorization': f'Bearer {self.api_key}'
@@ -443,8 +432,6 @@ class VllmModel(BaseModel):
 class OpenAIModel(BaseModel):
     def __init__(self, temperature: float, model: str, json_response: bool, max_retries: int = 3, retry_delay: int = 1):
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-        load_config(config_path)
         self.model_endpoint = 'https://api.openai.com/v1/chat/completions'
         self.api_key = os.getenv('OPENAI_API_KEY')
         self.headers = {

@@ -24,11 +24,8 @@ RUN playwright install chromium firefox webkit
 # Copy the rest of the application
 COPY . .
 
-# Ensure the config file is copied to the correct location
-# COPY config/config.yaml /app/config/config.yaml
-# COPY config/config.yaml /config/config.yaml
-# COPY agent_memory/jar3d_final_response_previous_run.txt /app/agent_memory/jar3d_final_response_previous_run.txt
-
+# Copy the .env file to the Docker image
+COPY .env .env
 
 # Expose the port Chainlit runs on
 EXPOSE 8105

@@ -9,16 +9,24 @@ services:
     environment:
       - PYTHONUNBUFFERED=1  # Ensure Python output is not buffered
       - LLM_SHERPA_SERVER=http://nlm-ingestor:5001/api/parseDocument?renderFormat=all&useNewIndentParser=yes&applyOcr=no&timeout=15
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_USERNAME=${NEO4J_USERNAME}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
     depends_on:
       - nlm-ingestor
     volumes:
-      # - ./config:/app/config
       - ./fastembed_cache:/app/fastembed_cache
       - ./reranker_cache:/app/reranker_cache
-      # - ./agent_memory:/agent_memory
-    # environment:
-    #   - PYTHONUNBUFFERED=1  # Ensure Python output is not buffered
-    #   - LLM_SHERPA_SERVER=http://nlm-ingestor:5001/api/parseDocument?renderFormat=all&useNewIndentParser=yes
     mem_limit: 7.5g
     cpus: 5.0
 
