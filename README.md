@@ -1,10 +1,10 @@
-## Overview
+# Overview
 
 > **Important Note**
-> 
+>
 > Jar3d has undergone a complete overhaul. The neo4j feature has been temporarily removed and will be reintroduced in a future release.
 
-### Supported Servers and Models
+## Supported Servers and Models
 
 - **openai** (Recommended)
   - Models:
@@ -14,7 +14,7 @@
 - **anthropic**
   - Supported, but not recommended for use
 
-### About Jar3d
+## About Jar3d
 
 Jar3d is a Meta Agent built on LangGraph, designed to orchestrate a team of agents for completing basic tasks.
 
@@ -28,22 +28,31 @@ The agent team includes:
 **The agent team can be extended by adding additional tool using agents to the project.**
 
 > **Important Note**
-> 
+>
 > If you are extending the agent team, you must have a `meta_agent` and a `reporter_agent` in the team.
 
 Jar3d can perform basic tasks like product sourcing, writing newsletters, creating itineraries, and essentially anything that can be reasonably done with the team of agents listed above.
 
 ## Table of Contents
 
-1. [Core Concepts](#core-concepts)
-2. [Prerequisites](#prerequisites)
-3. [Configuration](#configuration)
-4. [Setup](#setup)
-5. [Usage](#usage)
-6. [Roadmap](#roadmap)
-7. [Further Reading](#further-reading)
-8. [Integrations](#integrations)
-9. [Features on the Roadmap](#features-on-the-roadmap)
+- [Overview](#overview)
+  - [Supported Servers and Models](#supported-servers-and-models)
+  - [About Jar3d](#about-jar3d)
+  - [Table of Contents](#table-of-contents)
+  - [Core Concepts](#core-concepts)
+    - [Key Techniques](#key-techniques)
+    - [System Workflow](#system-workflow)
+      - [Workflow Diagram](#workflow-diagram)
+  - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
+  - [Setup](#setup)
+    - [Confgurations](#confgurations)
+    - [Docker Setup](#docker-setup)
+  - [Usage](#usage)
+  - [Roadmap](#roadmap)
+  - [Further Reading](#further-reading)
+  - [Integrations](#integrations)
+  - [Features on the Roadmap](#features-on-the-roadmap)
 
 ## Core Concepts
 
@@ -92,10 +101,10 @@ graph TD
 1. Git
 2. Docker and Docker Compose
 
-
 ## Configuration
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/brainqub3/meta_expert.git
    cd meta_expert
@@ -113,22 +122,25 @@ graph TD
 
 Setup the configurations for the project in the `config/config.yaml` file.
 
-   - **Serper API Key:** Get it from [https://serper.dev/](https://serper.dev/)
-   - **OpenAI API Key:** Get it from [https://openai.com/](https://openai.com/)- Advised Model
-   - **Gemini API Key:** Get it from [https://ai.google.dev/gemini-api](https://ai.google.dev/gemini-api) - Not currently supported
-   - **Claude API Key:** Get it from [https://docs.anthropic.com/en/api/getting-started](https://docs.anthropic.com/en/api/getting-started)
-   - **Groq API Key:** Get it from [https://console.groq.com/keys](https://console.groq.com/keys) - Not currently supported
+- **Serper API Key:** Get it from [https://serper.dev/](https://serper.dev/)
+- **OpenAI API Key:** Get it from [https://openai.com/](https://openai.com/)- Advised Model
+- **Gemini API Key:** Get it from [https://ai.google.dev/gemini-api](https://ai.google.dev/gemini-api) - Not currently supported
+- **Claude API Key:** Get it from [https://docs.anthropic.com/en/api/getting-started](https://docs.anthropic.com/en/api/getting-started)
+- **Groq API Key:** Get it from [https://console.groq.com/keys](https://console.groq.com/keys) - Not currently supported
 
 ### Docker Setup
 
 1. Ensure Docker daemon is running.
 2. Build and start containers:
+
    ```bash
    docker-compose up --build
    ```
+
 3. Access Jar3d web interface at `http://localhost:8105`.
 
 To stop the service:
+
 ```bash
 docker-compose down
 ```

@@ -1,0 +1,29 @@
+[project]
+name = "meta-expert"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4==4.12.3",
+    "chainlit==1.1.202",
+    "chromadb==0.5.5",
+    "colorlog==6.8.2",
+    "faiss-cpu==1.8.0.post1",
+    "fake-useragent==1.5.1",
+    "fastembed==0.3.4",
+    "flashrank==0.2.6",
+    "langchain-anthropic==0.1.23",
+    "langchain-community==0.2.12",
+    "langchain-core==0.2.33",
+    "langchain-experimental==0.0.64",
+    "langchain-openai==0.1.22",
+    "langgraph==0.2.4",
+    "langsmith==0.1.129",
+    "llmsherpa==0.1.4",
+    "neo4j==5.23.1",
+    "playwright==1.45.0",
+    "pypdf==4.2.0",
+    "termcolor==2.4.0",
+    "timeout-decorator==0.5.0",
+]
