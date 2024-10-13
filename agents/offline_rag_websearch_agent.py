@@ -40,12 +40,23 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
     """
 
     def __init__(self, name: str, model: str = "claude-3-5-sonnet-20240620", server: str = "anthropic", temperature: float = 0):
+        """
+        Initialize the OfflineRAGWebsearchAgent with common parameters.
+
+        :param name: The name to register the agent
+        :param model: The name of the language model to use
+        :param server: The server hosting the language model
+        :param temperature: Controls randomness in model outputs
+        """
         super().__init__(name, model=model, server=server, temperature=temperature)
         print(f"OfflineRAGWebsearchAgent '{self.name}' initialized.")
 
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Get guided JSON schema for the intelligent chunking tool, expecting a list of URL-query pairs.
+
+        :param state: The current state of the agent.
+        :return: Guided JSON schema as a dictionary.
         """
         guided_json_schema = {
             "type": "object",
@@ -79,6 +90,10 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
         """
         Execute the run_rag method on a list of URL-query pairs.
         Returns the results as a JSON-formatted string.
+
+        :param tool_response: The response from the tool.
+        :param state: The current state of the agent.
+        :return: The results as a JSON-formatted string.
         """
         url_query_pairs = tool_response.get("url_query_pairs")
         if not url_query_pairs:

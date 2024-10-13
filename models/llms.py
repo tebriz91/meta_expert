@@ -17,6 +17,10 @@ client = Client()
 
 
 class BaseModel:
+    """
+    Base class for all language models.
+    Provides common functionality for invoking models and handling retries.
+    """
     def __init__(
         self,
         temperature: float,
@@ -26,6 +30,16 @@ class BaseModel:
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the BaseModel with common parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param prompt_caching: Whether to use prompt caching
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         self.temperature = temperature
         self.model = model
         self.json_response = json_response
@@ -33,15 +47,20 @@ class BaseModel:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
 
-    # @traceable(run_type="llm",
-    #            metadata={"ls_provider": 'anthropic', 'ls_model_name': 'claude-3-5-sonnet-20240620'}
-    #            )
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(requests.RequestException),
     )
     def _make_request(self, url, headers, payload):
+        """
+        Make a POST request to the specified URL with retries.
+
+        :param url: The URL to send the request to
+        :param headers: The headers to include in the request
+        :param payload: The payload to include in the request
+        :return: The JSON response from the server
+        """
         response = requests.post(url, headers=headers, json=payload)
         try:
             response.raise_for_status()
@@ -54,10 +73,20 @@ class BaseModel:
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Abstract method to invoke the model's main functionality.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         pass
 
 
 class MistralModel(BaseModel):
+    """
+    Mistral language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -66,6 +95,15 @@ class MistralModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the MistralModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.api_key = os.getenv("MISTRAL_API_KEY")
         self.headers = {
@@ -75,13 +113,20 @@ class MistralModel(BaseModel):
         }
         self.model_endpoint = "https://api.mistral.ai/v1/chat/completions"
 
-    # @traceable(run_type="llm")
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
         retry=retry_if_exception_type(requests.RequestException),
     )
     def _make_request(self, url, headers, payload):
+        """
+        Make a POST request to the specified URL with retries.
+
+        :param url: The URL to send the request to
+        :param headers: The headers to include in the request
+        :param payload: The payload to include in the request
+        :return: The JSON response from the server
+        """
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         response.raise_for_status()
         return response.json()
@@ -89,6 +134,13 @@ class MistralModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Mistral model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         system = messages[0]["content"]
         user = messages[1]["content"]
 
@@ -132,6 +184,9 @@ class MistralModel(BaseModel):
 
 
 class ClaudeModel(BaseModel):
+    """
+    Claude language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -141,6 +196,16 @@ class ClaudeModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the ClaudeModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param prompt_caching: Whether to use prompt caching
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(
             temperature, model, json_response, prompt_caching, max_retries, retry_delay
         )
@@ -152,7 +217,6 @@ class ClaudeModel(BaseModel):
         }
         self.model_endpoint = "https://api.anthropic.com/v1/messages"
 
-    # def invoke(self, messages: List[Dict[str, str]]) -> str:
     @traceable(
         run_type="llm",
         metadata={
@@ -163,6 +227,13 @@ class ClaudeModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Claude model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         # Extract system message if present
         system = next(
             (msg["content"] for msg in messages if msg["role"] == "system"), None
@@ -225,10 +296,11 @@ class ClaudeModel(BaseModel):
         except (ValueError, KeyError, json.JSONDecodeError) as e:
             return json.dumps({"error": f"Error processing response: {str(e)}"})
 
-        # return _invoke()
-
 
 class GeminiModel(BaseModel):
+    """
+    Gemini language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -237,6 +309,15 @@ class GeminiModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the GeminiModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.headers = {"Content-Type": "application/json"}
@@ -245,6 +326,13 @@ class GeminiModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Gemini model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         system = messages[0]["content"]
         user = messages[1]["content"]
 
@@ -265,7 +353,6 @@ class GeminiModel(BaseModel):
                     "temperature": self.temperature,
                 },
             }
-        # payload["generationConfig"]["response_mime_type"] = "application/json"
 
         try:
             request_response_json = self._make_request(
@@ -297,6 +384,9 @@ class GeminiModel(BaseModel):
 
 
 class GroqModel(BaseModel):
+    """
+    Groq language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -305,6 +395,15 @@ class GroqModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the GroqModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.api_key = os.getenv("GROQ_API_KEY")
         self.headers = {
@@ -316,6 +415,13 @@ class GroqModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Groq model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         system = messages[0]["content"]
         user = messages[1]["content"]
 
@@ -360,6 +466,9 @@ class GroqModel(BaseModel):
 
 
 class OllamaModel(BaseModel):
+    """
+    Ollama language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -368,13 +477,24 @@ class OllamaModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the OllamaModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.headers = {"Content-Type": "application/json"}
         self.ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
         self.model_endpoint = f"{self.ollama_host}/api/generate"
 
     def _check_and_pull_model(self):
-        # Check if the model exists
+        """
+        Check if the model exists and pull it if necessary.
+        """
         response = requests.get(f"{self.ollama_host}/api/tags")
         if response.status_code == 200:
             models = response.json().get("models", [])
@@ -387,6 +507,9 @@ class OllamaModel(BaseModel):
             print(f"Failed to check models. Status code: {response.status_code}")
 
     def _pull_model(self):
+        """
+        Pull the model from the server.
+        """
         pull_endpoint = f"{self.ollama_host}/api/pull"
         payload = {"name": self.model}
         response = requests.post(pull_endpoint, json=payload, stream=True)
@@ -403,6 +526,13 @@ class OllamaModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Ollama model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         self._check_and_pull_model()  # Check and pull the model if necessary
 
         system = messages[0]["content"]
@@ -439,6 +569,9 @@ class OllamaModel(BaseModel):
 
 
 class VllmModel(BaseModel):
+    """
+    Vllm language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -449,6 +582,17 @@ class VllmModel(BaseModel):
         max_retries: int = 5,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the VllmModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param model_endpoint: Specific endpoint for the model API
+        :param json_response: Whether the model should return JSON responses
+        :param stop: Stop sequence for model generation
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.headers = {"Content-Type": "application/json"}
         self.model_endpoint = model_endpoint + "v1/chat/completions"
@@ -457,6 +601,13 @@ class VllmModel(BaseModel):
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the Vllm model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         system = messages[0]["content"]
         user = messages[1]["content"]
 
@@ -507,6 +658,9 @@ class VllmModel(BaseModel):
 
 
 class OpenAIModel(BaseModel):
+    """
+    OpenAI language model class.
+    """
     def __init__(
         self,
         temperature: float,
@@ -515,6 +669,15 @@ class OpenAIModel(BaseModel):
         max_retries: int = 3,
         retry_delay: int = 1,
     ):
+        """
+        Initialize the OpenAIModel with specific parameters.
+
+        :param temperature: Controls randomness in model outputs
+        :param model: The name of the language model to use
+        :param json_response: Whether the model should return JSON responses
+        :param max_retries: Maximum number of retries for requests
+        :param retry_delay: Delay between retries in seconds
+        """
         super().__init__(temperature, model, json_response, max_retries, retry_delay)
         self.model_endpoint = "https://api.openai.com/v1/chat/completions"
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -523,13 +686,19 @@ class OpenAIModel(BaseModel):
             "Authorization": f"Bearer {self.api_key}",
         }
 
-    # def invoke(self, messages: List[Dict[str, str]]) -> str:
     @traceable(
         run_type="llm", metadata={"ls_provider": "openai", "ls_model_name": "gpt-4o"}
     )
     def invoke(
         self, messages: List[Dict[str, str]], guided_json: Dict[str, Any] = None
     ) -> str:
+        """
+        Invoke the OpenAI model with the provided messages.
+
+        :param messages: The messages to send to the model
+        :param guided_json: Optional guided JSON schema for the model
+        :return: The model's response as a string
+        """
         # Extract system message if present
         system = next(
             (msg["content"] for msg in messages if msg["role"] == "system"), None
@@ -576,8 +745,6 @@ class OpenAIModel(BaseModel):
                 },
             }
 
-        # print(f"DEBUG PAYLOAD: {payload}")
-
         try:
             response_json = self._make_request(
                 self.model_endpoint, self.headers, payload
@@ -598,14 +765,15 @@ class OpenAIModel(BaseModel):
         except json.JSONDecodeError as e:
             return json.dumps({"error": f"Error processing response: {str(e)}"})
 
-    # return _invoke()
-
 
 if __name__ == "__main__":
     from langsmith.run_helpers import traceable
 
     @traceable(run_type="llm")
     def test_function():
+        """
+        Test function to demonstrate tracing.
+        """
         return "This is a test."
 
     result = test_function()

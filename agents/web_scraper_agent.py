@@ -37,12 +37,23 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
     """
 
     def __init__(self, name: str, model: str = "claude-3-5-sonnet-20240620", server: str = "anthropic", temperature: float = 0):
+        """
+        Initialize the WebScraperAgent with common parameters.
+
+        :param name: The name to register the agent
+        :param model: The name of the language model to use
+        :param server: The server hosting the language model
+        :param temperature: Controls randomness in model outputs
+        """
         super().__init__(name, model=model, server=server, temperature=temperature)
         print(f"WebScraperAgent '{self.name}' initialized.")
 
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Get guided JSON schema for the scraper tool, expecting a list of URLs.
+
+        :param state: The current state of the agent.
+        :return: Guided JSON schema as a dictionary.
         """
         guided_json_schema = {
             "type": "object",
@@ -65,6 +76,10 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         """
         Execute the scraper tool on a list of URLs concurrently using multi-threading.
         Returns the scrape results as a JSON-formatted string.
+
+        :param tool_response: The response from the tool.
+        :param state: The current state of the agent.
+        :return: The scrape results as a JSON-formatted string.
         """
         urls = tool_response.get("urls")
         if not urls:
@@ -73,6 +88,12 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         
         # Define a function for scraping a single URL
         def scrape_url(url):
+            """
+            Scrape the content of a single URL.
+
+            :param url: The URL to scrape.
+            :return: A tuple containing the URL and the scrape result.
+            """
             print(f"{self.name} is scraping URL: {url}")
             scrape_result = scraper(url)
             print(f"{self.name} obtained scrape result for URL: {url}")

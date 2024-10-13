@@ -38,6 +38,14 @@ class SerperShoppingAgent(ToolCallingAgent[StateT]):
     """
 
     def __init__(self, name: str, model: str = "claude-v1", server: str = "claude", temperature: float = 0):
+        """
+        Initialize the SerperShoppingAgent with common parameters.
+
+        :param name: The name to register the agent
+        :param model: The name of the language model to use
+        :param server: The server hosting the language model
+        :param temperature: Controls randomness in model outputs
+        """
         super().__init__(name, model=model, server=server, temperature=temperature)
         self.location = "us"  # Default location for search
         print(f"SerperShoppingAgent '{self.name}' initialized.")
@@ -45,6 +53,9 @@ class SerperShoppingAgent(ToolCallingAgent[StateT]):
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Define the guided JSON schema expecting a list of shopping queries.
+
+        :param state: The current state of the agent.
+        :return: Guided JSON schema as a dictionary.
         """
         guided_json_schema = {
             "type": "object",
@@ -75,6 +86,10 @@ class SerperShoppingAgent(ToolCallingAgent[StateT]):
         """
         Execute the shopping search tool using the provided tool response, handling multiple queries concurrently.
         Returns the shopping results as a concatenated string.
+
+        :param tool_response: The response from the tool.
+        :param state: The current state of the agent.
+        :return: The shopping results as a concatenated string.
         """
         queries = tool_response.get("queries")
         location = tool_response.get("location", self.location)
@@ -84,6 +99,12 @@ class SerperShoppingAgent(ToolCallingAgent[StateT]):
 
         # Define a function for searching a single query
         def search_query(query):
+            """
+            Perform a search for a single query.
+
+            :param query: The shopping query string.
+            :return: The formatted shopping result string.
+            """
             print(f"Searching for '{query}' in location '{location}'")
             result = serper_shopping_search(query, location)
             if 'error' in result:

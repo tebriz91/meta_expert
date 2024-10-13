@@ -7,16 +7,13 @@ import requests
 from typing import Dict, Any
 from config.load_configs import load_config
 
-# def format_results(organic_results: str) -> str:
-#     result_strings = []
-#     for result in organic_results:
-#         title = result.get('title', 'No Title')
-#         link = result.get('link', '#')
-#         result_strings.append(f"Title: {title}\nLink: {link}---")
-    
-#     return '\n'.join(result_strings)
-
 def format_shopping_results(shopping_results: list) -> str:
+    """
+    Format the shopping results into a readable string.
+
+    :param shopping_results: List of shopping results.
+    :return: Formatted string of shopping results.
+    """
     result_strings = []
     for result in shopping_results:
         title = result.get('title', 'No Title')
@@ -32,6 +29,13 @@ def format_shopping_results(shopping_results: list) -> str:
     return '\n'.join(result_strings)
 
 def serper_search(query: str, location: str) -> Dict[str, Any]:
+    """
+    Perform a Google search using the Serper API.
+
+    :param query: The search query string.
+    :param location: The geographic location for the search.
+    :return: Dictionary containing the search results.
+    """
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
     load_config(config_path)
     search_url = "https://google.serper.dev/search"
@@ -84,6 +88,13 @@ def serper_search(query: str, location: str) -> Dict[str, Any]:
         return {'error': str(ex)}
 
 def serper_shopping_search(query: str, location: str) -> Dict[str, Any]:
+    """
+    Perform a Google Shopping search using the Serper API.
+
+    :param query: The shopping query string.
+    :param location: The geographic location for the search.
+    :return: Dictionary containing the shopping results.
+    """
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
     load_config(config_path)
     search_url = "https://google.serper.dev/shopping"
@@ -110,6 +121,13 @@ def serper_shopping_search(query: str, location: str) -> Dict[str, Any]:
         return f"JSON decoding error occurred: {json_err}"
 
 def serper_scholar_search(query: str, location: str) -> Dict[str, Any]:
+    """
+    Perform a Google Scholar search using the Serper API.
+
+    :param query: The scholar query string.
+    :param location: The geographic location for the search.
+    :return: Dictionary containing the scholar results.
+    """
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
     load_config(config_path)
     search_url = "https://google.serper.dev/scholar"
@@ -139,11 +157,8 @@ def format_search_results(search_results: Dict[str, Any]) -> str:
     """
     Formats the search results dictionary into a readable string.
 
-    Args:
-        search_results (Dict[str, Any]): The dictionary containing search results.
-
-    Returns:
-        str: A formatted string with the query, title, link, and sitelinks.
+    :param search_results: The dictionary containing search results.
+    :return: A formatted string with the query, title, link, and sitelinks.
     """
     formatted_strings = []
     organic_results = search_results.get('organic_results', [])

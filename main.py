@@ -17,6 +17,9 @@ from workflow_builders.meta_agent import build_workflow
 
 @cl.on_chat_start
 async def start():
+    """
+    Initialize the chat session, set up task list, and register agents.
+    """
     task_list = cl.TaskList()
     task_list.status = "Ready"
     await task_list.send()
@@ -114,12 +117,29 @@ async def start():
 
 
 def build_chat_workflow(agent_team, requirements, configs=None, state=None):
+    """
+    Build the chat workflow using the provided agent team and requirements.
+
+    :param agent_team: List of agents to be included in the workflow.
+    :param requirements: User requirements for the workflow.
+    :param configs: Optional configurations for the workflow.
+    :param state: Optional initial state for the workflow.
+    :return: Compiled workflow and initial state.
+    """
     workflow, state = build_workflow(agent_team, requirements)
 
     return workflow, state
 
 
 def _run_workflow_sync(workflow, state, configs, progress_queue):
+    """
+    Run the workflow synchronously and update the progress queue.
+
+    :param workflow: The compiled workflow to be executed.
+    :param state: The initial state of the workflow.
+    :param configs: Configuration settings for the workflow.
+    :param progress_queue: Queue to track progress messages.
+    """
     seen_progress_messages = set()
     try:
         for event in workflow.stream(state, configs):
@@ -157,6 +177,14 @@ def _run_workflow_sync(workflow, state, configs, progress_queue):
 
 
 async def run_workflow(workflow, state, configs):
+    """
+    Run the workflow asynchronously and update the task list.
+
+    :param workflow: The compiled workflow to be executed.
+    :param state: The initial state of the workflow.
+    :param configs: Configuration settings for the workflow.
+    :return: Final message and updated state.
+    """
     task_list = cl.user_session.get("task_list")
     task_list.status = "Running..."
     await task_list.send()
@@ -200,6 +228,11 @@ async def run_workflow(workflow, state, configs):
 
 @cl.on_message
 async def main(message: cl.Message):
+    """
+    Main function to handle incoming messages and manage the workflow.
+
+    :param message: The incoming message from the user.
+    """
     # Retrieve session variables
     # Add new agents to the session
     meta_agent = cl.user_session.get("meta_agent")

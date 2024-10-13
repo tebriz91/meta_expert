@@ -15,6 +15,7 @@ from langchain_core.prompts import (
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field, create_model
 
+# Example data for testing
 examples = [
     {
         "text": (
@@ -67,6 +68,7 @@ examples = [
     },
 ]
 
+# System prompt for the LLM
 system_prompt = (
     "# Knowledge Graph Instructions for GPT-4\n"
     "## 1. Overview\n"
@@ -104,6 +106,7 @@ system_prompt = (
     "Adhere to the rules strictly. Non-compliance will result in termination."
 )
 
+# Default prompt template for the LLM
 default_prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -124,6 +127,12 @@ default_prompt = ChatPromptTemplate.from_messages(
 
 
 def _get_additional_info(input_type: str) -> str:
+    """
+    Get additional information based on the input type.
+
+    :param input_type: The type of input (node, relationship, or property).
+    :return: Additional information as a string.
+    """
     # Check if the input_type is one of the allowed values
     if input_type not in ["node", "relationship", "property"]:
         raise ValueError("input_type must be 'node', 'relationship', or 'property'")
@@ -154,7 +163,16 @@ def optional_enum_field(
     llm_type: Optional[str] = None,
     **field_kwargs: Any,
 ) -> Any:
-    """Utility function to conditionally create a field with an enum constraint."""
+    """
+    Utility function to conditionally create a field with an enum constraint.
+
+    :param enum_values: List of enum values.
+    :param description: Description of the field.
+    :param input_type: Type of input (node, relationship, or property).
+    :param llm_type: Type of the language model.
+    :param field_kwargs: Additional field keyword arguments.
+    :return: Field with optional enum constraint.
+    """
     # Only openai supports enum param
     if enum_values and llm_type == "openai-chat":
         return Field(
@@ -175,11 +193,17 @@ def optional_enum_field(
 
 
 class _Graph(BaseModel):
+    """
+    Represents a graph with nodes and relationships.
+    """
     nodes: Optional[List]
     relationships: Optional[List]
 
 
 class UnstructuredRelation(BaseModel):
+    """
+    Represents an unstructured relation with head, head_type, relation, tail, and tail_type.
+    """
     head: str = Field(
         description=(
             "extracted head entity like Microsoft, Apple, John. "
@@ -204,6 +228,13 @@ class UnstructuredRelation(BaseModel):
 def create_unstructured_prompt(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
 ) -> ChatPromptTemplate:
+    """
+    Create a prompt template for extracting unstructured relations.
+
+    :param node_labels: List of node labels.
+    :param rel_types: List of relationship types.
+    :return: ChatPromptTemplate for extracting unstructured relations.
+    """
     node_labels_str = str(node_labels) if node_labels else ""
     rel_types_str = str(rel_types) if rel_types else ""
     base_string_parts = [
@@ -444,7 +475,12 @@ def create_simple_model(
 
 
 def map_to_base_node(node: Any) -> Node:
-    """Map the SimpleNode to the base Node."""
+    """
+    Map the SimpleNode to the base Node.
+
+    :param node: The SimpleNode to map.
+    :return: The mapped Node.
+    """
     properties = {}
     if hasattr(node, "properties") and node.properties:
         for p in node.properties:
@@ -453,7 +489,12 @@ def map_to_base_node(node: Any) -> Node:
 
 
 def map_to_base_relationship(rel: Any) -> Relationship:
-    """Map the SimpleRelationship to the base Relationship."""
+    """
+    Map the SimpleRelationship to the base Relationship.
+
+    :param rel: The SimpleRelationship to map.
+    :return: The mapped Relationship.
+    """
     source = Node(id=rel.source_node_id, type=rel.source_node_type)
     target = Node(id=rel.target_node_id, type=rel.target_node_type)
     properties = {}
@@ -468,6 +509,12 @@ def map_to_base_relationship(rel: Any) -> Relationship:
 def _parse_and_clean_json(
     argument_json: Dict[str, Any],
 ) -> Tuple[List[Node], List[Relationship]]:
+    """
+    Parse and clean the JSON data to extract nodes and relationships.
+
+    :param argument_json: The JSON data to parse.
+    :return: A tuple containing lists of nodes and relationships.
+    """
     nodes = []
     for node in argument_json["nodes"]:
         if not node.get("id"):  # Id is mandatory, skip this node
@@ -538,6 +585,12 @@ def _parse_and_clean_json(
 
 
 def _format_nodes(nodes: List[Node]) -> List[Node]:
+    """
+    Format the nodes by capitalizing their IDs and types.
+
+    :param nodes: List of nodes to format.
+    :return: List of formatted nodes.
+    """
     return [
         Node(
             id=el.id.title() if isinstance(el.id, str) else el.id,
@@ -551,6 +604,12 @@ def _format_nodes(nodes: List[Node]) -> List[Node]:
 
 
 def _format_relationships(rels: List[Relationship]) -> List[Relationship]:
+    """
+    Format the relationships by capitalizing their types and replacing spaces with underscores.
+
+    :param rels: List of relationships to format.
+    :return: List of formatted relationships.
+    """
     return [
         Relationship(
             source=_format_nodes([el.source])[0],
@@ -563,6 +622,12 @@ def _format_relationships(rels: List[Relationship]) -> List[Relationship]:
 
 
 def format_property_key(s: str) -> str:
+    """
+    Format a property key by converting it to camelCase.
+
+    :param s: The property key to format.
+    :return: The formatted property key.
+    """
     words = s.split()
     if not words:
         return s
@@ -574,6 +639,12 @@ def format_property_key(s: str) -> str:
 def _convert_to_graph_document(
     raw_schema: Dict[Any, Any],
 ) -> Tuple[List[Node], List[Relationship]]:
+    """
+    Convert the raw schema to a graph document.
+
+    :param raw_schema: The raw schema to convert.
+    :return: A tuple containing lists of nodes and relationships.
+    """
     # If there are validation errors
     if not raw_schema["parsed"]:
         try:
@@ -624,7 +695,8 @@ def _convert_to_graph_document(
 
 
 class LLMGraphTransformer:
-    """Transform documents into graph-based documents using a LLM.
+    """
+    Transform documents into graph-based documents using a LLM.
 
     It allows specifying constraints on the types of nodes and relationships to include
     in the output graph. The class supports extracting properties for both nodes and
@@ -734,6 +806,10 @@ class LLMGraphTransformer:
         """
         Processes a single document, transforming it into a graph document using
         an LLM based on the model's schema and constraints.
+
+        :param document: The document to process.
+        :param config: Optional configuration for the runnable.
+        :return: The transformed graph document.
         """
         text = document.page_content
         raw_schema = self.chain.invoke({"input": text}, config=config)
@@ -804,14 +880,12 @@ class LLMGraphTransformer:
     def convert_to_graph_documents(
         self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
-        """Convert a sequence of documents into graph documents.
+        """
+        Convert a sequence of documents into graph documents.
 
-        Args:
-            documents (Sequence[Document]): The original documents.
-            kwargs: Additional keyword arguments.
-
-        Returns:
-            Sequence[GraphDocument]: The transformed documents as graphs.
+        :param documents: The original documents.
+        :param config: Optional configuration for the runnable.
+        :return: The transformed documents as graphs.
         """
         return [self.process_response(document, config) for document in documents]
 
@@ -821,6 +895,10 @@ class LLMGraphTransformer:
         """
         Asynchronously processes a single document, transforming it into a
         graph document.
+
+        :param document: The document to process.
+        :param config: Optional configuration for the runnable.
+        :return: The transformed graph document.
         """
         text = document.page_content
         raw_schema = await self.chain.ainvoke({"input": text}, config=config)
@@ -865,6 +943,10 @@ class LLMGraphTransformer:
     ) -> List[GraphDocument]:
         """
         Asynchronously convert a sequence of documents into graph documents.
+
+        :param documents: The original documents.
+        :param config: Optional configuration for the runnable.
+        :return: The transformed documents as graphs.
         """
         tasks = [
             asyncio.create_task(self.aprocess_response(document, config))

@@ -218,13 +218,16 @@ class ToolCallingAgent(BaseAgent[StateT]):
         """
         Invoke the agent's main functionality.
         """
+        # Read instructions from the state
         instructions = self.read_instructions(state)
         if not instructions:
             print(f"No instructions provided to {self.name}.")
             return {}
 
+        # Get guided JSON schema for tool calling
         guided_json = self.get_guided_json(state)
-        # guided_json_str = json.dumps(guided_json).encode('unicode_escape').decode('utf-8')
+
+        # Call the external tool and get the response
         tool_response_str = self.call_tool(instructions, guided_json)
 
         # Parse the JSON string returned by LLM into a dictionary

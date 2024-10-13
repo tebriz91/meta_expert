@@ -7,27 +7,13 @@ from langgraph.graph.message import add_messages
 from typing import TypedDict, Annotated, Any
 from langgraph.graph.message import add_messages
 
-
-
-# Define AgentWorkpad as a TypedDict with total=False to allow extra keys
+# Define AgentRegistry as a TypedDict with total=False to allow extra keys
 class AgentRegistry(TypedDict, total=False):
-    # WebSearchAgent: Annotated[Any, add_messages]
+    """
+    A registry for agents, allowing dynamic addition of agents.
+    """
     user: List[Any]
-    # Jar3d: Annotated[Any, add_messages]
-    # RAGAgent: Annotated[Any, add_messages]
-    # total=False allows us to add additional agents dynamically
 
-# Initialize the agent_workpad as an empty AgentWorkpad
-# agent_workpad: AgentWorkpad = {}
+# Initialize the AgentRegistry as an empty dictionary
 AgentRegistry = {}
-# AgentWorkpad is a shared dictionary instance
-
-
-
-
-
-
-
-
-
-
+# AgentRegistry is a shared dictionary instance

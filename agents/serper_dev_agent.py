@@ -43,6 +43,14 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
     """
 
     def __init__(self, name: str, model: str = "claude-v1", server: str = "claude", temperature: float = 0):
+        """
+        Initialize the SerperDevAgent with common parameters.
+
+        :param name: The name to register the agent
+        :param model: The name of the language model to use
+        :param server: The server hosting the language model
+        :param temperature: Controls randomness in model outputs
+        """
         super().__init__(name, model=model, server=server, temperature=temperature)
         self.location = "us"  # Default location for search
         print(f"SerperDevAgent '{self.name}' initialized.")
@@ -50,6 +58,9 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Define the guided JSON schema expecting a list of search queries.
+
+        :param state: The current state of the agent.
+        :return: Guided JSON schema as a dictionary.
         """
         guided_json_schema = {
             "type": "object",
@@ -80,6 +91,10 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         """
         Execute the search tool using the provided tool response, handling multiple queries concurrently.
         Returns the search results as a concatenated string.
+
+        :param tool_response: The response from the tool.
+        :param state: The current state of the agent.
+        :return: The search results as a concatenated string.
         """
         queries = tool_response.get("queries")
         location = tool_response.get("location", self.location)
@@ -89,6 +104,12 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
 
         # Define a function for searching a single query
         def search_query(query):
+            """
+            Perform a search for a single query.
+
+            :param query: The search query string.
+            :return: The formatted search result string.
+            """
             print(f"Searching for '{query}' in location '{location}'")
             result = serper_search(query, location)
             formatted_result_str = format_search_results(result)

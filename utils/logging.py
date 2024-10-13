@@ -44,7 +44,16 @@ def setup_logging(level=logging.INFO, log_file=None):
         logger.addHandler(file_handler)
 
 def format_dict(d, indent=0):
-    """Format a dictionary for pretty printing."""
+    """
+    Format a dictionary for pretty printing.
+    
+    Args:
+    d (dict): The dictionary to format.
+    indent (int): The indentation level for nested dictionaries.
+    
+    Returns:
+    str: The formatted dictionary as a string.
+    """
     return '\n'.join(f"{'  ' * indent}{k}: {format_dict(v, indent+1) if isinstance(v, dict) else v}" for k, v in d.items())
 
 def log_function(logger: logging.Logger):

@@ -51,8 +51,14 @@ def timeout(max_timeout):
     return timeout_decorator
 
 
-# Change: Added function to deduplicate re-ranked results.
 def deduplicate_results(results, rerank=True):
+    """
+    Deduplicate re-ranked results.
+
+    :param results: List of results to deduplicate.
+    :param rerank: Boolean indicating if results are re-ranked.
+    :return: List of unique results.
+    """
     seen = set()
     unique_results = []
     for result in results:
@@ -70,6 +76,15 @@ def deduplicate_results(results, rerank=True):
 
 
 def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, batch_size: int = 25) -> List[Dict[str, str]]:
+    """
+    Index and rank documents using FastEmbeddings and FAISS.
+
+    :param corpus: List of documents to index and rank.
+    :param query: Query string for ranking.
+    :param top_percent: Percentage of top results to return.
+    :param batch_size: Batch size for processing documents.
+    :return: List of ranked results.
+    """
     print(colored(f"\n\nStarting indexing and ranking with FastEmbeddings and FAISS for {len(corpus)} documents\n\n", "green"))
     CACHE_DIR = "/fastembed_cache"
     embeddings = FastEmbedEmbeddings(model_name='jinaai/jina-embeddings-v2-small-en', max_length=512, cache_dir=CACHE_DIR)
@@ -121,7 +136,7 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
         # Perform the search
         k = min(100, len(corpus))  # Ensure we don't try to retrieve more documents than we have
 
-        # Change: Retrieve documents based on query in metadata  
+        # Retrieve documents based on query in metadata  
         similarity_cache = {}
         docs = []
         for doc in corpus:
@@ -159,7 +174,7 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
                 traceback.print_exc()
 
         print(colored("\n\nRe-ranking documents...\n\n", "green"))
-        # Change: reranker done based on query in metadata
+        # Reranker done based on query in metadata
         CACHE_DIR_RANKER = "/reranker_cache"
         ranker = Ranker(cache_dir=CACHE_DIR_RANKER)
         results = []
@@ -217,6 +232,15 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
     return final_results
 
 def run_hybrid_graph_retrieval(graph: Neo4jGraph = None, corpus: List[Document] = None, query: str = None, rag_mode: str = None):
+    """
+    Run hybrid graph retrieval.
+
+    :param graph: Neo4jGraph instance.
+    :param corpus: List of documents.
+    :param query: Query string.
+    :param rag_mode: Retrieval mode (Hybrid or Dense).
+    :return: Retrieved context.
+    """
     print(colored(f"\n\Initiating Retrieval...\n\n", "green"))
 
     if rag_mode == "Hybrid":
@@ -235,15 +259,19 @@ def run_hybrid_graph_retrieval(graph: Neo4jGraph = None, corpus: List[Document] 
     elif rag_mode == "Dense":
         print(colored("Running Dense Only Retrieval...", "yellow"))
         retrieved_context_unformatted = index_and_rank(corpus, query)
-        # print(colored(f"\n\n DEBUG RETRIEVED CONTEXT UNFORMATTED: {retrieved_context_unformatted}\n\n TYPE: {type(retrieved_context_unformatted)}\n\n", "green"))
-        # retrieved_context = json.loads(retrieved_context_unformatted[0])
-        # retrieved_context = f"Additional Context:{unstructured_data}"
 
     return retrieved_context_unformatted
 
 
-@timeout(20)  # Change: Takes url and query as input
+@timeout(20)
 def intelligent_chunking(url: str, query: str) -> List[Document]:
+    """
+    Perform intelligent chunking with LLM Sherpa for a given URL and query.
+
+    :param url: URL to process.
+    :param query: Query string.
+    :return: List of documents.
+    """
     try:
         print(colored(f"\n\nStarting Intelligent Chunking with LLM Sherpa for URL: {url}\n\n", "green"))
         llmsherpa_api_url = os.environ.get('LLM_SHERPA_SERVER')
@@ -267,7 +295,7 @@ def intelligent_chunking(url: str, query: str) -> List[Document]:
             for chunk in doc.chunks():
                 document = Document(
                     page_content=chunk.to_context_text(),
-                    metadata={"source": url, "query": query} # Change: Added query to metadata
+                    metadata={"source": url, "query": query}
                 )
 
                 if len(document.page_content) > 0:
@@ -279,7 +307,6 @@ def intelligent_chunking(url: str, query: str) -> List[Document]:
         if not doc:
             print(colored(f"No document to append to corpus", "red"))
         
-        # print(colored(f"DEBUG: Corpus: {corpus}", "yellow"))
         return corpus
     
     except concurrent.futures.TimeoutError:
@@ -294,6 +321,8 @@ def intelligent_chunking(url: str, query: str) -> List[Document]:
 def clear_neo4j_database(graph: Neo4jGraph):
     """
     Clear all nodes and relationships from the Neo4j database.
+
+    :param graph: Neo4jGraph instance.
     """
     try:
         print(colored("\n\nClearing Neo4j database...\n\n", "yellow"))
@@ -314,9 +343,20 @@ def create_graph_index(
     query: str = None, 
     graph: Neo4jGraph = None,
     batch_size: int = 10,
-    max_workers: int = 5  # Number of threads in the pool
+    max_workers: int = 5
 ) -> Neo4jGraph:
-    
+    """
+    Create a graph index from documents.
+
+    :param documents: List of documents.
+    :param allowed_relationships: List of allowed relationships.
+    :param allowed_nodes: List of allowed nodes.
+    :param query: Query string.
+    :param graph: Neo4jGraph instance.
+    :param batch_size: Batch size for processing documents.
+    :param max_workers: Number of threads in the pool.
+    :return: Updated Neo4jGraph instance.
+    """
     if os.environ.get('LLM_SERVER') == "openai":
         llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")
     else:
@@ -344,6 +384,13 @@ def create_graph_index(
     graph_documents = []
 
     def process_batch(batch_docs, batch_number):
+        """
+        Process a batch of documents.
+
+        :param batch_docs: List of documents in the batch.
+        :param batch_number: Batch number.
+        :return: List of graph documents.
+        """
         print(colored(f"\nProcessing batch {batch_number} of {total_batches}\n", "yellow"))
         try:
             batch_graph_docs = llm_transformer.convert_to_graph_documents(batch_docs)
@@ -384,6 +431,12 @@ def create_graph_index(
     return graph
 
 def process_retrieved_context(retrieved_context: List[Dict[str, Any]]) -> str:
+    """
+    Process retrieved context.
+
+    :param retrieved_context: List of retrieved context entries.
+    :return: Processed context as a string.
+    """
     output = ""
     for idx, entry in enumerate(retrieved_context, start=1):
         text = entry.get('text', '')
@@ -393,7 +446,16 @@ def process_retrieved_context(retrieved_context: List[Dict[str, Any]]) -> str:
 
 
 def run_rag(urls: List[str], allowed_nodes: List[str] = None, allowed_relationships: List[str] = None, query: List[str] = None, rag_mode: str = None) -> List[Dict[str, str]]:
-    # Change: adapted to take query and url as input.
+    """
+    Run Retrieval-Augmented Generation (RAG) process.
+
+    :param urls: List of URLs to process.
+    :param allowed_nodes: List of allowed nodes.
+    :param allowed_relationships: List of allowed relationships.
+    :param query: List of query strings.
+    :param rag_mode: Retrieval mode (Hybrid or Dense).
+    :return: List of results.
+    """
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(urls), 5)) as executor:  
             futures = [executor.submit(intelligent_chunking, url, query) for url, query in zip(urls, query)]
             chunks_list = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -416,8 +478,6 @@ def run_rag(urls: List[str], allowed_nodes: List[str] = None, allowed_relationsh
 
     retrieved_context = run_hybrid_graph_retrieval(graph=graph, corpus=corpus, query=query, rag_mode=rag_mode)
     
-    # print(colored(f"\n\n DEBUG RETRIEVED CONTEXT: {retrieved_context}\n\n TYPE: {type(retrieved_context)}\n\n", "green"))
-
     processed_context = process_retrieved_context(retrieved_context)
 
     return processed_context
@@ -426,11 +486,7 @@ if __name__ == "__main__":
     # For testing purposes.
     url1 = "https://www.reddit.com/r/microsoft/comments/1bkikl1/regretting_buying_copilot_for_microsoft_365"
     url2 = "'https://www.reddit.com/r/microsoft_365_copilot/comments/1chtqtg/do_you_actually_find_365_copilot_useful_in_your"
-    # url3 = "https://developers.googleblog.com/en/new-features-for-the-gemini-api-and-google-ai-studio/"
 
-    # query = "cheapest macbook"
-
-    # urls = [url1, url2, url3]
     urls = [url1, url2]
     query = ["Co-pilot Microsoft"]
     allowed_nodes = None

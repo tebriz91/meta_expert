@@ -11,6 +11,12 @@ ua = UserAgent()
 os.environ["USER_AGENT"] = ua.random
 
 def scraper(url: str) -> dict:
+    """
+    Scrape content from a given URL. Tries to scrape as HTML first, then as PDF if HTML fails.
+
+    :param url: The URL to scrape.
+    :return: A dictionary containing the source URL and the scraped content.
+    """
     print(colored(f"\n\nStarting basic scraping with URL: {url}\n\n", "green"))
     try:
         print(colored(f"Starting HTML scraper with URL: {url}", "green"))
@@ -43,6 +49,12 @@ def scraper(url: str) -> dict:
             return result
 
 def scrape_urls(urls: list) -> list:
+    """
+    Scrape content from a list of URLs concurrently.
+
+    :param urls: A list of URLs to scrape.
+    :return: A list of dictionaries containing the source URL and the scraped content for each URL.
+    """
     results = []
     with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_url = {executor.submit(scraper, url): url for url in urls}

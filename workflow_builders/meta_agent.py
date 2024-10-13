@@ -5,6 +5,16 @@ from langgraph.checkpoint.memory import MemorySaver
 import json
 
 def build_workflow(agent_team, requirements):
+    """
+    Builds a workflow for a team of agents based on the given requirements.
+
+    Args:
+        agent_team (list): A list of agent classes.
+        requirements (dict): A dictionary of requirements for the workflow.
+
+    Returns:
+        tuple: A tuple containing the compiled workflow and the initial state.
+    """
     # Ensure 'meta_agent' and 'reporter_agent' are in agent_team
     agent_names = [agent.name for agent in agent_team]
     if 'meta_agent' not in agent_names or 'reporter_agent' not in agent_names:
@@ -41,6 +51,15 @@ def build_workflow(agent_team, requirements):
 
     # Define the routing function
     def routing_function(state):
+        """
+        Determines the next agent to be invoked based on the current state.
+
+        Args:
+            state (dict): The current state of the workflow.
+
+        Returns:
+            str: The name of the next agent node to be invoked.
+        """
         # print(colored(f"\n\nDEBUG: State: {state}\n\n", 'red'))
         if state.get("meta_agent", ""):
             meta_agent_response = state.get("meta_agent", "")[-1].page_content
