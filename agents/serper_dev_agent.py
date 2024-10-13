@@ -11,14 +11,18 @@ from .agent_base import StateT, ToolCallingAgent
 class SerperDevAgent(ToolCallingAgent[StateT]):
     """
     # Functionality:
-    This agent performs Google web searches based on a list of queries you provide. It returns a formatted list of organic search results, including the query, title, link, and sitelinks for each result.
+    This agent performs Google web searches based on a list of queries you
+    provide. It returns a formatted list of organic search results, including
+    the query, title, link, and sitelinks for each result.
 
     ## Inputs:
     - **queries**: A list of search query strings.
-    - **location**: Geographic location code for the search (e.g., 'us', 'gb', 'nl', 'ca'). Defaults to 'us'.
+    - **location**: Geographic location code for the search
+    (e.g., 'us', 'gb','nl', 'ca'). Defaults to 'us'.
 
     ## Outputs:
-    - A formatted string representing the organic search engine results page (SERP), including:
+    - A formatted string representing the organic search engine results
+    page (SERP), including:
         - Query
         - Title
         - Link
@@ -29,14 +33,19 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
     - When you require URLs from search results for further investigation.
 
     ## Important Notes:
-    - This tool **only** provides search result summaries; it does **not** access or retrieve content from the linked web pages.
-    - To obtain detailed content or specific information from the web pages listed in the search results, you should use the **WebScraperAgent** or the **OfflineRAGWebsearchAgent** with the URLs obtained from this tool.
+    - This tool **only** provides search result summaries; it does **not**
+    access or retrieve content from the linked web pages.
+    - To obtain detailed content or specific information from the web pages
+    listed in the search results, you should use the **WebScraperAgent** or
+    the **OfflineRAGWebsearchAgent** with the URLs obtained from this tool.
 
     ## Example Workflow:
-    1. **Search**: Use this agent with queries like `["latest advancements in AI"]`.
+    1. **Search**: Use this agent with queries like
+    `["latest advancements in AI"]`.
     2. **Retrieve URLs**: Extract the list of URLs from the search results.
     3. **Deep Dive**:
-        - Use web scraping with the extracted URLs to get the full content of the pages.
+        - Use web scraping with the extracted URLs to get the full content of
+        the pages.
         - Use RAG to extract specific data from web pages.
 
     # Remember
@@ -48,10 +57,10 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
     def __init__(
         self,
         name: str,
-        model: str = "claude-v1",
-        server: str = "claude",
+        model: str = "gpt-4o-mini",
+        server: str = "openai",
         temperature: float = 0,
-    ):
+    ) -> None:
         """
         Initialize the SerperDevAgent with common parameters.
 
@@ -60,7 +69,12 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         :param server: The server hosting the language model
         :param temperature: Controls randomness in model outputs
         """
-        super().__init__(name, model=model, server=server, temperature=temperature)
+        super().__init__(
+            name=name,
+            model=model,
+            server=server,
+            temperature=temperature,
+        )
         self.location = "us"  # Default location for search
         print(f"SerperDevAgent '{self.name}' initialized.")
 
@@ -86,8 +100,9 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
                     "type": "string",
                     "description": (
                         "The geographic location for the search results. "
-                        "Available locations: 'us' (United States), 'gb' (United Kingdom), "
-                        "'nl' (The Netherlands), 'ca' (Canada)."
+                        "Available locations: 'us' (United States), "
+                        "'gb' (United Kingdom), 'nl' (The Netherlands), "
+                        "'ca' (Canada)."
                     ),
                 },
             },
@@ -96,9 +111,14 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         }
         return guided_json_schema
 
-    def execute_tool(self, tool_response: Dict[str, Any], state: StateT = None) -> Any:
+    def execute_tool(
+        self,
+        tool_response: Dict[str, Any],
+        state: StateT = None,
+    ) -> Any:
         """
-        Execute the search tool using the provided tool response, handling multiple queries concurrently.
+        Execute the search tool using the provided tool response,
+        handling multiple queries concurrently.
         Returns the search results as a concatenated string.
 
         :param tool_response: The response from the tool.
@@ -106,32 +126,31 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         :return: The search results as a concatenated string.
         """
         queries = tool_response.get("queries")
-        location = tool_response.get("location", self.location)
+        loc = tool_response.get("location", self.location)
         if not queries:
-            raise ValueError("Search queries are missing from the tool response")
-        print(
-            f"{self.name} is searching for queries: {queries} in location: {location}"
-        )
+            raise ValueError("Search queries missing from the tool response")
+        print(f"{self.name} is searching for queries: {queries} in loc: {loc}")
 
         # Define a function for searching a single query
-        def search_query(query):
+        def search_query(query) -> str:
             """
             Perform a search for a single query.
 
             :param query: The search query string.
             :return: The formatted search result string.
             """
-            print(f"Searching for '{query}' in location '{location}'")
-            result = serper_search(query, location)
-            formatted_result_str = format_search_results(result)
+            print(f"Searching for '{query}' in location '{loc}'")
+            result = serper_search(query=query, location=loc)
+            formatted_result_str = format_search_results(search_results=result)
             print(f"Obtained search results for query: '{query}'")
-            return formatted_result_str  # Return only the formatted result string
+            return formatted_result_str  # Return only formatted result str
 
         # Collect all formatted result strings
         search_results_list = []
         with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_query = {
-                executor.submit(search_query, query): query for query in queries
+                executor.submit(search_query, query): query
+                for query in queries  # noqa: E501
             }
             for future in as_completed(future_to_query):
                 query = future_to_query[future]
@@ -141,9 +160,7 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
                         result
                     )  # Append the result string directly
                 except Exception as exc:
-                    print(
-                        f"Exception occurred while searching for query '{query}': {exc}"
-                    )
+                    print(f"Exc while searching for query '{query}': {exc}")
                     error_message = f"Error for query '{query}': {exc}"
                     search_results_list.append(error_message)
 
@@ -151,8 +168,11 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         combined_results = "\n".join(search_results_list)
         print(
             colored(
-                f"DEBUG: {self.name} search results: {combined_results} \n\n Type:{type(combined_results)}",
-                "green",
+                text=(
+                    f"DEBUG: {self.name} search res: {combined_results} \n\n"
+                    f"Type:{type(combined_results)}"
+                ),
+                color="green",
             )
         )
 
@@ -162,7 +182,7 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
 
 if __name__ == "__main__":
     # Create an instance of SerperDevAgent for testing
-    agent = SerperDevAgent("TestSerperAgent")
+    agent = SerperDevAgent(name="TestSerperAgent")
 
     # Create a sample tool response
     test_tool_response = {
@@ -175,10 +195,14 @@ if __name__ == "__main__":
 
     # Execute the tool and print the results
     try:
-        results = agent.execute_tool(test_tool_response, test_state)
+        results = agent.execute_tool(
+            tool_response=test_tool_response,
+            state=test_state,
+        )
         print("Search Results:")
         print(results)
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    # You can add more test cases or assertions here to verify the functionality
+    # You can add more test cases or assertions
+    # here to verify the functionality

@@ -1,12 +1,12 @@
-# Jar3d: Open-Source Research Agent
+# Meta Expert: Research Agent
 
-Jar3d is an open-source research agent developed by [@Brainqub3](https://www.brainqub3.com/)
+Meta Expert is a research agent
 
 ## How to Use
 
-1. Provide your requirements to Jar3d.
+1. Provide your requirements to Meta Expert.
 2. When you have finished delivering your requirements, submit `/end` in the chat.
-3. Wait for Jar3d to respond.
+3. Wait for Meta Expert to respond.
 4. If you want to provide feedback on an output, you should append your message with `/feedback` in the chat.
 for example:
 ```
@@ -17,7 +17,7 @@ for example:
 
 ## Ideal Tasks
 
-Jar3d is particularly well-suited for tasks that require research and information synthesis, such as:
+Meta Expert is particularly well-suited for tasks that require research and information synthesis, such as:
 
 - Sourcing products
 - Writing newsletters
@@ -30,4 +30,4 @@ Jar3d is particularly well-suited for tasks that require research and informatio
 - Fact-checking and verification
 - Analyzing consumer reviews
 
-Note: Jar3d has access to the Google search engine and Google Shopping for its research capabilities.
+Note: Meta Expert has access to the Google search engine and Google Shopping for its research capabilities.
