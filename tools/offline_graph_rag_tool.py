@@ -1,33 +1,33 @@
-import sys
 import os
-import json
+import sys
+
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 import concurrent.futures
 import functools
-import numpy as np
-import faiss
 import traceback
-from typing import Dict, List, Optional, Any
-from termcolor import colored
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
-from langchain_community.graphs import Neo4jGraph
-from tools.llm_graph_transformer import LLMGraphTransformer
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_community.vectorstores import FAISS
-from flashrank import Ranker, RerankRequest
-from llmsherpa.readers import LayoutPDFReader
-from langchain.schema import Document
-from config.load_configs import load_config
-from langchain_community.docstore.in_memory import InMemoryDocstore
+from typing import Any, Dict, List
+
+import faiss
+import numpy as np
 from fake_useragent import UserAgent
+from flashrank import Ranker, RerankRequest
+from langchain.schema import Document
+from langchain_anthropic import ChatAnthropic
+from langchain_community.docstore.in_memory import InMemoryDocstore
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.vectorstores import FAISS
+from langchain_openai import ChatOpenAI
+from llmsherpa.readers import LayoutPDFReader
+from termcolor import colored
+
+from tools.llm_graph_transformer import LLMGraphTransformer
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yaml')
-load_config(config_path)
+config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
 
 ua = UserAgent()
 os.environ["USER_AGENT"] = ua.random
@@ -36,8 +36,10 @@ os.environ["FAISS_OPT_LEVEL"] = "generic"
 
 def timeout(max_timeout):
     """Timeout decorator, parameter in seconds."""
+
     def timeout_decorator(item):
         """Wrap the original function."""
+
         @functools.wraps(item)
         def func_wrapper(*args, **kwargs):
             """Closure for function."""
@@ -46,8 +48,15 @@ def timeout(max_timeout):
                 try:
                     return future.result(max_timeout)
                 except concurrent.futures.TimeoutError:
-                    return [Document(page_content=f"Timeout occurred while processing URL: {args[0]}", metadata={"source": args[0]})]
+                    return [
+                        Document(
+                            page_content=f"Timeout occurred while processing URL: {args[0]}",
+                            metadata={"source": args[0]},
+                        )
+                    ]
+
         return func_wrapper
+
     return timeout_decorator
 
 
@@ -64,18 +73,20 @@ def deduplicate_results(results, rerank=True):
     for result in results:
         # Create a tuple of the content and source to use as a unique identifier
         if rerank:
-            identifier = (result['text'], result['meta'])
+            identifier = (result["text"], result["meta"])
         else:
             # When not reranking, result is a tuple (doc, score)
             doc, score = result
-            identifier = (doc.page_content, doc.metadata.get('source', ''))
+            identifier = (doc.page_content, doc.metadata.get("source", ""))
         if identifier not in seen:
             seen.add(identifier)
             unique_results.append(result)
     return unique_results
 
 
-def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, batch_size: int = 25) -> List[Dict[str, str]]:
+def index_and_rank(
+    corpus: List[Document], query: str, top_percent: float = 50, batch_size: int = 25
+) -> List[Dict[str, str]]:
     """
     Index and rank documents using FastEmbeddings and FAISS.
 
@@ -85,9 +96,18 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
     :param batch_size: Batch size for processing documents.
     :return: List of ranked results.
     """
-    print(colored(f"\n\nStarting indexing and ranking with FastEmbeddings and FAISS for {len(corpus)} documents\n\n", "green"))
+    print(
+        colored(
+            f"\n\nStarting indexing and ranking with FastEmbeddings and FAISS for {len(corpus)} documents\n\n",
+            "green",
+        )
+    )
     CACHE_DIR = "/fastembed_cache"
-    embeddings = FastEmbedEmbeddings(model_name='jinaai/jina-embeddings-v2-small-en', max_length=512, cache_dir=CACHE_DIR)
+    embeddings = FastEmbedEmbeddings(
+        model_name="jinaai/jina-embeddings-v2-small-en",
+        max_length=512,
+        cache_dir=CACHE_DIR,
+    )
 
     print(colored("\n\nCreating FAISS index...\n\n", "green"))
 
@@ -99,7 +119,7 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
 
         # Process documents in batches
         for i in range(0, len(corpus), batch_size):
-            batch = corpus[i:i+batch_size]
+            batch = corpus[i : i + batch_size]
             texts = [doc.page_content for doc in batch]
             metadatas = [doc.metadata for doc in batch]
 
@@ -114,14 +134,14 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
             if index is None:
                 # Create the index with the first batch
                 index = faiss.IndexFlatIP(batch_embeddings_np.shape[1])
-            
+
             # Normalize the embeddings
             faiss.normalize_L2(batch_embeddings_np)
 
             # Add embeddings to the index
             start_id = len(index_to_docstore_id)
             index.add(batch_embeddings_np)
-            
+
             # Update docstore and index_to_docstore_id
             for j, (text, metadata) in enumerate(zip(texts, metadatas)):
                 doc_id = f"{start_id + j}"
@@ -134,13 +154,15 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
         retriever = FAISS(embeddings, index, docstore, index_to_docstore_id)
 
         # Perform the search
-        k = min(100, len(corpus))  # Ensure we don't try to retrieve more documents than we have
+        k = min(
+            100, len(corpus)
+        )  # Ensure we don't try to retrieve more documents than we have
 
-        # Retrieve documents based on query in metadata  
+        # Retrieve documents based on query in metadata
         similarity_cache = {}
         docs = []
         for doc in corpus:
-            query = doc.metadata.get('query', '')
+            query = doc.metadata.get("query", "")
             # Check if we've already performed this search
             if query in similarity_cache:
                 cached_results = similarity_cache[query]
@@ -148,17 +170,17 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
             else:
                 # Perform the similarity search
                 search_results = retriever.similarity_search_with_score(query, k=k)
-                
+
                 # Cache the results
                 similarity_cache[query] = search_results
-                
+
                 # Add to docs
                 docs.extend(search_results)
 
         docs = deduplicate_results(docs, rerank=False)
 
         print(colored(f"\n\nRetrieved {len(docs)} documents\n\n", "green"))
-        
+
         passages = []
         for idx, (doc, score) in enumerate(docs, start=1):
             try:
@@ -166,7 +188,7 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
                     "id": idx,
                     "text": doc.page_content,
                     "meta": doc.metadata.get("source", {"source": "unknown"}),
-                    "score": float(score)  # Convert score to float
+                    "score": float(score),  # Convert score to float
                 }
                 passages.append(passage)
             except Exception as e:
@@ -182,56 +204,77 @@ def index_and_rank(corpus: List[Document], query: str, top_percent: float = 50, 
 
         # Perform reranking with query caching
         for doc in corpus:
-            query = doc.metadata.get('query', '')
-            
+            query = doc.metadata.get("query", "")
+
             # Skip if we've already processed this query
             if query in processed_queries:
                 continue
-            
+
             rerankrequest = RerankRequest(query=query, passages=passages)
             result = ranker.rerank(rerankrequest)
             results.extend(result)
-            
+
             # Mark this query as processed
             processed_queries.add(query)
 
         results = deduplicate_results(results, rerank=True)
 
-        print(colored(f"\n\nRe-ranking complete with {len(results)} documents\n\n", "green"))
+        print(
+            colored(
+                f"\n\nRe-ranking complete with {len(results)} documents\n\n", "green"
+            )
+        )
 
         # Sort results by score in descending order
-        sorted_results = sorted(results, key=lambda x: x['score'], reverse=True)
+        sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
 
         # Calculate the number of results to return based on the percentage
         num_results = max(1, int(len(sorted_results) * (top_percent / 100)))
         top_results = sorted_results[:num_results]
 
         final_results = [
-            {
-                "text": result['text'],
-                "meta": result['meta'],
-                "score": result['score']
-            }
+            {"text": result["text"], "meta": result["meta"], "score": result["score"]}
             for result in top_results
         ]
 
-        print(colored(f"\n\nReturned top {top_percent}% of results ({len(final_results)} documents)\n\n", "green"))
+        print(
+            colored(
+                f"\n\nReturned top {top_percent}% of results ({len(final_results)} documents)\n\n",
+                "green",
+            )
+        )
 
         # Add debug information about scores
-        scores = [result['score'] for result in results]
-        print(f"Score distribution: min={min(scores):.4f}, max={max(scores):.4f}, mean={np.mean(scores):.4f}, median={np.median(scores):.4f}")
+        scores = [result["score"] for result in results]
+        print(
+            f"Score distribution: min={min(scores):.4f}, max={max(scores):.4f}, mean={np.mean(scores):.4f}, median={np.median(scores):.4f}"
+        )
         print(f"Unique scores: {len(set(scores))}")
         if final_results:
-            print(f"Score range for top {top_percent}% results: {final_results[-1]['score']:.4f} to {final_results[0]['score']:.4f}")
+            print(
+                f"Score range for top {top_percent}% results: {final_results[-1]['score']:.4f} to {final_results[0]['score']:.4f}"
+            )
 
     except Exception as e:
         print(colored(f"Error in indexing and ranking: {str(e)}", "red"))
         traceback.print_exc()
-        final_results = [{"text": "Error in indexing and ranking", "meta": {"source": "unknown"}, "score": 0.0}]
+        final_results = [
+            {
+                "text": "Error in indexing and ranking",
+                "meta": {"source": "unknown"},
+                "score": 0.0,
+            }
+        ]
 
     return final_results
 
-def run_hybrid_graph_retrieval(graph: Neo4jGraph = None, corpus: List[Document] = None, query: str = None, rag_mode: str = None):
+
+def run_hybrid_graph_retrieval(
+    graph: Neo4jGraph = None,
+    corpus: List[Document] = None,
+    query: str = None,
+    rag_mode: str = None,
+):
     """
     Run hybrid graph retrieval.
 
@@ -241,15 +284,15 @@ def run_hybrid_graph_retrieval(graph: Neo4jGraph = None, corpus: List[Document] 
     :param rag_mode: Retrieval mode (Hybrid or Dense).
     :return: Retrieved context.
     """
-    print(colored(f"\n\Initiating Retrieval...\n\n", "green"))
+    print(colored("\n\Initiating Retrieval...\n\n", "green"))
 
     if rag_mode == "Hybrid":
         print(colored("Running Hybrid Retrieval...", "yellow"))
         unstructured_data = index_and_rank(corpus, query)
 
-        query = f"""
+        query = """
         MATCH p = (n)-[r]->(m)
-        WHERE COUNT {{(n)--()}} > 30
+        WHERE COUNT {(n)--()} > 30
         RETURN p AS Path
         LIMIT 85
         """
@@ -273,15 +316,20 @@ def intelligent_chunking(url: str, query: str) -> List[Document]:
     :return: List of documents.
     """
     try:
-        print(colored(f"\n\nStarting Intelligent Chunking with LLM Sherpa for URL: {url}\n\n", "green"))
-        llmsherpa_api_url = os.environ.get('LLM_SHERPA_SERVER')
+        print(
+            colored(
+                f"\n\nStarting Intelligent Chunking with LLM Sherpa for URL: {url}\n\n",
+                "green",
+            )
+        )
+        llmsherpa_api_url = os.environ.get("LLM_SHERPA_SERVER")
 
         if not llmsherpa_api_url:
             raise ValueError("LLM_SHERPA_SERVER environment variable is not set")
-        
+
         corpus = []
 
-        try: 
+        try:
             print(colored("Starting LLM Sherpa LayoutPDFReader...\n\n", "yellow"))
             reader = LayoutPDFReader(llmsherpa_api_url)
             doc = reader.read_pdf(url)
@@ -290,32 +338,41 @@ def intelligent_chunking(url: str, query: str) -> List[Document]:
             print(colored(f"Error in LLM Sherpa LayoutPDFReader: {str(e)}", "red"))
             traceback.print_exc()
             doc = None
-        
+
         if doc:
             for chunk in doc.chunks():
                 document = Document(
                     page_content=chunk.to_context_text(),
-                    metadata={"source": url, "query": query}
+                    metadata={"source": url, "query": query},
                 )
 
                 if len(document.page_content) > 0:
                     corpus.append(document)
-            
+
             print(colored(f"Created corpus with {len(corpus)} documents", "green"))
-            
-        
+
         if not doc:
-            print(colored(f"No document to append to corpus", "red"))
-        
+            print(colored("No document to append to corpus", "red"))
+
         return corpus
-    
+
     except concurrent.futures.TimeoutError:
         print(colored(f"Timeout occurred while processing URL: {url}", "red"))
-        return [Document(page_content=f"Timeout occurred while processing URL: {url}", metadata={"source": url})]
-    except Exception as e:        
+        return [
+            Document(
+                page_content=f"Timeout occurred while processing URL: {url}",
+                metadata={"source": url},
+            )
+        ]
+    except Exception as e:
         print(colored(f"Error in Intelligent Chunking for URL {url}: {str(e)}", "red"))
         traceback.print_exc()
-        return [Document(page_content=f"Error in Intelligent Chunking for URL: {url}", metadata={"source": url})]
+        return [
+            Document(
+                page_content=f"Error in Intelligent Chunking for URL: {url}",
+                metadata={"source": url},
+            )
+        ]
 
 
 def clear_neo4j_database(graph: Neo4jGraph):
@@ -337,13 +394,13 @@ def clear_neo4j_database(graph: Neo4jGraph):
 
 
 def create_graph_index(
-    documents: List[Document] = None, 
-    allowed_relationships: List[str] = None, 
-    allowed_nodes: List[str] = None, 
-    query: str = None, 
+    documents: List[Document] = None,
+    allowed_relationships: List[str] = None,
+    allowed_nodes: List[str] = None,
+    query: str = None,
     graph: Neo4jGraph = None,
     batch_size: int = 10,
-    max_workers: int = 5
+    max_workers: int = 5,
 ) -> Neo4jGraph:
     """
     Create a graph index from documents.
@@ -357,7 +414,7 @@ def create_graph_index(
     :param max_workers: Number of threads in the pool.
     :return: Updated Neo4jGraph instance.
     """
-    if os.environ.get('LLM_SERVER') == "openai":
+    if os.environ.get("LLM_SERVER") == "openai":
         llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")
     else:
         llm = ChatAnthropic(temperature=0, model_name="claude-3-haiku-20240307")
@@ -367,19 +424,21 @@ def create_graph_index(
         allowed_nodes=allowed_nodes,
         allowed_relationships=allowed_relationships,
         node_properties=True,
-        relationship_properties=True
+        relationship_properties=True,
     )
 
     total_docs = len(documents)
-    
+
     # Prepare batches
-    batches = [
-        documents[i:i + batch_size]
-        for i in range(0, total_docs, batch_size)
-    ]
+    batches = [documents[i : i + batch_size] for i in range(0, total_docs, batch_size)]
     total_batches = len(batches)
 
-    print(colored(f"\nTotal documents: {total_docs}, Total batches: {total_batches}\n", "green"))
+    print(
+        colored(
+            f"\nTotal documents: {total_docs}, Total batches: {total_batches}\n",
+            "green",
+        )
+    )
 
     graph_documents = []
 
@@ -391,7 +450,9 @@ def create_graph_index(
         :param batch_number: Batch number.
         :return: List of graph documents.
         """
-        print(colored(f"\nProcessing batch {batch_number} of {total_batches}\n", "yellow"))
+        print(
+            colored(f"\nProcessing batch {batch_number} of {total_batches}\n", "yellow")
+        )
         try:
             batch_graph_docs = llm_transformer.convert_to_graph_documents(batch_docs)
             print(colored(f"Finished batch {batch_number}\n", "green"))
@@ -423,12 +484,13 @@ def create_graph_index(
 
     # Add documents to the graph
     graph.add_graph_documents(
-        graph_documents, 
-        baseEntityLabel=True, 
+        graph_documents,
+        baseEntityLabel=True,
         include_source=True,
     )
 
     return graph
+
 
 def process_retrieved_context(retrieved_context: List[Dict[str, Any]]) -> str:
     """
@@ -439,13 +501,19 @@ def process_retrieved_context(retrieved_context: List[Dict[str, Any]]) -> str:
     """
     output = ""
     for idx, entry in enumerate(retrieved_context, start=1):
-        text = entry.get('text', '')
-        source = entry.get('meta', {'source': 'unknown'})
+        text = entry.get("text", "")
+        source = entry.get("meta", {"source": "unknown"})
         output += f"---\nEntry {idx}\nText:\n{text}\nSource:\n{source}\n\n"
     return output
 
 
-def run_rag(urls: List[str], allowed_nodes: List[str] = None, allowed_relationships: List[str] = None, query: List[str] = None, rag_mode: str = None) -> List[Dict[str, str]]:
+def run_rag(
+    urls: List[str],
+    allowed_nodes: List[str] = None,
+    allowed_relationships: List[str] = None,
+    query: List[str] = None,
+    rag_mode: str = None,
+) -> List[Dict[str, str]]:
     """
     Run Retrieval-Augmented Generation (RAG) process.
 
@@ -456,31 +524,49 @@ def run_rag(urls: List[str], allowed_nodes: List[str] = None, allowed_relationsh
     :param rag_mode: Retrieval mode (Hybrid or Dense).
     :return: List of results.
     """
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(urls), 5)) as executor:  
-            futures = [executor.submit(intelligent_chunking, url, query) for url, query in zip(urls, query)]
-            chunks_list = [future.result() for future in concurrent.futures.as_completed(futures)]
-    
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(urls), 5)
+    ) as executor:
+        futures = [
+            executor.submit(intelligent_chunking, url, query)
+            for url, query in zip(urls, query)
+        ]
+        chunks_list = [
+            future.result() for future in concurrent.futures.as_completed(futures)
+        ]
 
     corpus = [item for sublist in chunks_list for item in sublist]
 
-    print(colored(f"\n\nTotal documents in corpus after chunking: {len(corpus)}\n\n", "green"))
-
+    print(
+        colored(
+            f"\n\nTotal documents in corpus after chunking: {len(corpus)}\n\n", "green"
+        )
+    )
 
     print(colored(f"\n\n DEBUG HYBRID VALUE: {rag_mode}\n\n", "yellow"))
-    
+
     if rag_mode == "Hybrid":
-        print(colored(f"\n\n Creating Graph Index...\n\n", "green"))
+        print(colored("\n\n Creating Graph Index...\n\n", "green"))
         graph = Neo4jGraph()
         clear_neo4j_database(graph)
-        graph = create_graph_index(documents=corpus, allowed_nodes=allowed_nodes, allowed_relationships=allowed_relationships, query=query, graph=graph)
+        graph = create_graph_index(
+            documents=corpus,
+            allowed_nodes=allowed_nodes,
+            allowed_relationships=allowed_relationships,
+            query=query,
+            graph=graph,
+        )
     elif rag_mode == "Dense":
         graph = None
 
-    retrieved_context = run_hybrid_graph_retrieval(graph=graph, corpus=corpus, query=query, rag_mode=rag_mode)
-    
+    retrieved_context = run_hybrid_graph_retrieval(
+        graph=graph, corpus=corpus, query=query, rag_mode=rag_mode
+    )
+
     processed_context = process_retrieved_context(retrieved_context)
 
     return processed_context
+
 
 if __name__ == "__main__":
     # For testing purposes.
@@ -492,7 +578,13 @@ if __name__ == "__main__":
     allowed_nodes = None
     allowed_relationships = None
     rag_mode = "Hybrid"
-    results = run_rag(urls, allowed_nodes=allowed_nodes, allowed_relationships=allowed_relationships, query=query, rag_mode=rag_mode)
+    results = run_rag(
+        urls,
+        allowed_nodes=allowed_nodes,
+        allowed_relationships=allowed_relationships,
+        query=query,
+        rag_mode=rag_mode,
+    )
 
     print(colored(f"\n\n RESULTS: {results}", "green"))
 

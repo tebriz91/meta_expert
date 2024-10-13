@@ -2,7 +2,7 @@
 version: '2.4'  # Use version 2.x for this syntax
 
 services:
-  jar3d:
+  meta-expert:
     build: .
     ports:
       - "8105:8105"

@@ -1,4 +1,3 @@
-# Dockerfile for Jar3d
 FROM python:3.11-slim
 
 # Set working directory
