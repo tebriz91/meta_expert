@@ -5,9 +5,18 @@ import re
 import time
 
 import chainlit as cl
+from langgraph.checkpoint.memory import MemorySaver  # noqa
+from langgraph.graph import END, START, MessagesState, StateGraph  # noqa
 from termcolor import colored
 
-from agents.agent_base import MetaAgent, ReporterAgent, SimpleAgent
+from agents.agent_base import (
+    BaseAgent,  # noqa
+    MetaAgent,
+    ReporterAgent,
+    SimpleAgent,
+)
+from agents.agent_registry import AgentRegistry  # noqa
+from agents.agent_workpad import create_state_typed_dict  # noqa
 from agents.offline_rag_websearch_agent import OfflineRAGWebsearchAgent
 from agents.serper_dev_agent import SerperDevAgent
 from agents.serper_dev_shopping_agent import SerperShoppingAgent
@@ -30,38 +39,38 @@ async def start():
     IMPORTANT: Every Agent team must have a MetaAgent called
     "meta_agent" and a ReporterAgent called "reporter_agent".
     IMPORTANT: server names can be "openai" or "anthropic"
-    IMPORTANT: for openai models use gpt-4o-2024-08-06
-    or gpt-4o-mini-2024-07-18
+    IMPORTANT: for openai models use gpt-4o
+    or gpt-4o-mini
     """
     # Add new agents here:
     meta_agent = MetaAgent(
         name="meta_agent",
         server="openai",
-        model="gpt-4o-2024-08-06",
+        model="gpt-4o",
         temperature=0.7,
     )
     serper_agent = SerperDevAgent(
         name="serper_agent",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
     serper_shopping_agent = SerperShoppingAgent(
         name="serper_shopping_agent",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
     web_scraper_agent = WebScraperAgent(
         name="web_scraper_agent",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
     offline_rag_websearch_agent = OfflineRAGWebsearchAgent(
         name="offline_rag_websearch_agent",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
 
@@ -69,14 +78,14 @@ async def start():
     reporter_agent = ReporterAgent(
         name="reporter_agent",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
 
     llm = SimpleAgent(
         name="chat_model",
         server="openai",
-        model="gpt-4o-mini-2024-07-18",
+        model="gpt-4o-mini",
         temperature=0,
     )
 
@@ -252,7 +261,12 @@ async def main(message: cl.Message):
         previous_work = state.get("reporter_agent", "No response from ReporterAgent")[
             -1
         ].page_content
-        # print(colored(f"\n\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n\n Type: {type(previous_work)}\n\n", 'red'))
+        print(
+            colored(
+                f"\n\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n\n Type: {type(previous_work)}\n\n",
+                "red",
+            )
+        )
         system_prompt = f"{system_prompt}\n\nLast message from the agent:\n<prev_work>{previous_work}</prev_work>"
 
     # Add new agents to the agent_team
@@ -314,7 +328,7 @@ async def main(message: cl.Message):
         cl.user_session.set("state", state)
         cl.user_session
 
-        # print(colored(f"\n\nDEBUG AFTER RUN STATE: {state}\n\n", 'red'))
+        print(colored(f"\n\nDEBUG AFTER RUN STATE: {state}\n\n", "red"))
 
         await cl.Message(content=message, author="Jar3d👩‍💻").send()
     else:

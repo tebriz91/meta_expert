@@ -1,9 +1,12 @@
-from typing import Dict, Any, TypeVar
-from termcolor import colored
-from .agent_base import ToolCallingAgent, StateT
-from tools.google_serper import serper_search, format_search_results
-import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict
+
+from termcolor import colored
+
+from tools.google_serper import format_search_results, serper_search
+
+from .agent_base import StateT, ToolCallingAgent
+
 
 class SerperDevAgent(ToolCallingAgent[StateT]):
     """
@@ -42,7 +45,13 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
     --------------------------------
     """
 
-    def __init__(self, name: str, model: str = "claude-v1", server: str = "claude", temperature: float = 0):
+    def __init__(
+        self,
+        name: str,
+        model: str = "claude-v1",
+        server: str = "claude",
+        temperature: float = 0,
+    ):
         """
         Initialize the SerperDevAgent with common parameters.
 
@@ -69,9 +78,9 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
                     "type": "array",
                     "items": {
                         "type": "string",
-                        "description": "A search query string."
+                        "description": "A search query string.",
                     },
-                    "description": "A list of search query strings."
+                    "description": "A list of search query strings.",
                 },
                 "location": {
                     "type": "string",
@@ -79,11 +88,11 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
                         "The geographic location for the search results. "
                         "Available locations: 'us' (United States), 'gb' (United Kingdom), "
                         "'nl' (The Netherlands), 'ca' (Canada)."
-                    )
-                }
+                    ),
+                },
             },
             "required": ["queries", "location"],
-            "additionalProperties": False
+            "additionalProperties": False,
         }
         return guided_json_schema
 
@@ -100,7 +109,9 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         location = tool_response.get("location", self.location)
         if not queries:
             raise ValueError("Search queries are missing from the tool response")
-        print(f"{self.name} is searching for queries: {queries} in location: {location}")
+        print(
+            f"{self.name} is searching for queries: {queries} in location: {location}"
+        )
 
         # Define a function for searching a single query
         def search_query(query):
@@ -119,23 +130,35 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         # Collect all formatted result strings
         search_results_list = []
         with ThreadPoolExecutor(max_workers=5) as executor:
-            future_to_query = {executor.submit(search_query, query): query for query in queries}
+            future_to_query = {
+                executor.submit(search_query, query): query for query in queries
+            }
             for future in as_completed(future_to_query):
                 query = future_to_query[future]
                 try:
                     result = future.result()
-                    search_results_list.append(result)  # Append the result string directly
+                    search_results_list.append(
+                        result
+                    )  # Append the result string directly
                 except Exception as exc:
-                    print(f"Exception occurred while searching for query '{query}': {exc}")
+                    print(
+                        f"Exception occurred while searching for query '{query}': {exc}"
+                    )
                     error_message = f"Error for query '{query}': {exc}"
                     search_results_list.append(error_message)
 
         # Combine all search results into a single string
         combined_results = "\n".join(search_results_list)
-        print(colored(f"DEBUG: {self.name} search results: {combined_results} \n\n Type:{type(combined_results)}", "green"))
+        print(
+            colored(
+                f"DEBUG: {self.name} search results: {combined_results} \n\n Type:{type(combined_results)}",
+                "green",
+            )
+        )
 
         # Return the combined search results as a string
         return combined_results
+
 
 if __name__ == "__main__":
     # Create an instance of SerperDevAgent for testing
@@ -144,7 +167,7 @@ if __name__ == "__main__":
     # Create a sample tool response
     test_tool_response = {
         "queries": ["Python programming", "Machine learning basics"],
-        "location": "us"
+        "location": "us",
     }
 
     # Create a sample state (can be None or an empty dict for this test)

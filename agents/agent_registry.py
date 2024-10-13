@@ -13,16 +13,13 @@ from langgraph.graph.message import add_messages  # noqa
 class AgentRegistry(TypedDict, total=False):
     """
     A registry for agents, allowing dynamic addition of agents.
-
-    e.g.
-    Jar3d: Annotated[Any, add_messages]
-    RAGAgent: Annotated[Any, add_messages]
-    total=False allows us to add additional agents dynamically
     """
 
     user: List[Any]
 
 
-# Initialize the AgentRegistry as an empty dictionary
+# Initialize the agent_workpad as an empty AgentWorkpad
+# agent_workpad: AgentWorkpad = {}
+# AgentWorkpad is a shared dictionary instance
+
 AgentRegistry = {}
-# AgentRegistry is a shared dictionary instance

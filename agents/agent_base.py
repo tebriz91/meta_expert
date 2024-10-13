@@ -2,28 +2,30 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, TypeVar
-from langsmith import traceable
-from datetime import datetime
-from termcolor import colored
+
 from langchain_core.documents.base import Document
-from .agent_registry import AgentRegistry
+from termcolor import colored
+
+from agents.agent_registry import AgentRegistry
 from models.llms import (
+    ClaudeModel,
+    GeminiModel,
+    GroqModel,
+    MistralModel,
     OllamaModel,
     OpenAIModel,
-    GroqModel,
-    GeminiModel,
-    ClaudeModel,
     VllmModel,
-    MistralModel
 )
 
-StateT = TypeVar('StateT', bound=Dict[str, Any])
+StateT = TypeVar("StateT", bound=Dict[str, Any])
+
 
 class BaseAgent(ABC, Generic[StateT]):
     """
     Abstract base class for all agents in the system.
     Provides common functionality and interface for agent implementations.
     """
+
     def __init__(
         self,
         name: str,
@@ -31,7 +33,7 @@ class BaseAgent(ABC, Generic[StateT]):
         server: str = None,
         temperature: float = 0,
         model_endpoint: str = None,
-        stop: str = None
+        stop: str = None,
     ):
         """
         Initialize the BaseAgent with common parameters.
@@ -63,38 +65,38 @@ class BaseAgent(ABC, Generic[StateT]):
             return OpenAIModel(
                 temperature=self.temperature,
                 model=self.model,
-                json_response=json_response
+                json_response=json_response,
             )
         elif self.server == "anthropic":
             return ClaudeModel(
                 temperature=self.temperature,
                 model=self.model,
                 json_response=json_response,
-                prompt_caching=prompt_caching
+                prompt_caching=prompt_caching,
             )
         elif self.server == "mistral":
             return MistralModel(
                 temperature=self.temperature,
                 model=self.model,
-                json_response=json_response
+                json_response=json_response,
             )
         elif self.server == "ollama":
             return OllamaModel(
                 temperature=self.temperature,
                 model=self.model,
-                json_response=json_response
+                json_response=json_response,
             )
         elif self.server == "groq":
             return GroqModel(
                 temperature=self.temperature,
                 model=self.model,
-                json_response=json_response
+                json_response=json_response,
             )
         elif self.server == "gemini":
             return GeminiModel(
                 temperature=self.temperature,
                 model=self.model,
-                json_response=json_response
+                json_response=json_response,
             )
         elif self.server == "vllm":
             return VllmModel(
@@ -102,7 +104,7 @@ class BaseAgent(ABC, Generic[StateT]):
                 model=self.model,
                 model_endpoint=self.model_endpoint,
                 json_response=json_response,
-                stop=self.stop
+                stop=self.stop,
             )
         else:
             raise ValueError(f"Unsupported server type: {self.server}")
@@ -126,8 +128,6 @@ class BaseAgent(ABC, Generic[StateT]):
 
         state[self.name] = []
 
-        
-
     def write_to_state(self, state: StateT, response: Any):
         """
         Write the agent's response to the state under its registered name.
@@ -135,7 +135,9 @@ class BaseAgent(ABC, Generic[StateT]):
         :param state: The state dictionary to write to.
         :param response: The response to be written to the state.
         """
-        response_document = Document(page_content=response, metadata={"agent": self.name})
+        response_document = Document(
+            page_content=response, metadata={"agent": self.name}
+        )
 
         # Ensure state[self.name] is always a list
         if self.name not in state or not isinstance(state[self.name], list):
@@ -154,7 +156,9 @@ class BaseAgent(ABC, Generic[StateT]):
         try:
             meta_agent_response = state.get("meta_agent", [])[-1].page_content
             meta_agent_response_json = json.loads(meta_agent_response)
-            instructions = meta_agent_response_json.get("step_4", {}).get("final_draft", "")
+            instructions = meta_agent_response_json.get("step_4", {}).get(
+                "final_draft", ""
+            )
             # print(colored(f"\n\n{self.name} read instructions from meta_agent: {instructions}\n\n", 'green'))
         except Exception as e:
             print(f"You must have a meta_agent in your workflow: {e}")
@@ -171,10 +175,12 @@ class BaseAgent(ABC, Generic[StateT]):
         """
         pass
 
+
 class ToolCallingAgent(BaseAgent[StateT]):
     """
     An agent capable of calling external tools based on instructions.
     """
+
     @abstractmethod
     def get_guided_json(self, state: StateT) -> Dict[str, Any]:
         """
@@ -185,7 +191,9 @@ class ToolCallingAgent(BaseAgent[StateT]):
         """
         pass
 
-    def call_tool(self, instructions: str, guided_json: Dict[str, Any]) -> Dict[str, Any]:
+    def call_tool(
+        self, instructions: str, guided_json: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Call an external tool based on instructions and guided JSON.
 
@@ -193,12 +201,17 @@ class ToolCallingAgent(BaseAgent[StateT]):
         :param guided_json: Guided JSON for structuring the tool call.
         :return: The response from the LLM as a JSON string.
         """
-        guided_json_str = json.dumps(guided_json).encode('unicode_escape').decode('utf-8')
+        guided_json_str = (
+            json.dumps(guided_json).encode("unicode_escape").decode("utf-8")
+        )
 
         messages = [
-            {"role": "system", "content": f"Take the following instructions and return the specified JSON: {guided_json_str}."},
+            {
+                "role": "system",
+                "content": f"Take the following instructions and return the specified JSON: {guided_json_str}.",
+            },
         ] + [{"role": "user", "content": instructions}]
-        
+
         json_llm = self.get_llm(json_response=True)
         response = json_llm.invoke(messages, guided_json=guided_json)
         return response
@@ -247,6 +260,7 @@ class ToolCallingAgent(BaseAgent[StateT]):
         # Return the output
         return state
 
+
 class MetaAgent(BaseAgent[StateT]):
     """
     An agent that generates responses based on instructions and state.
@@ -261,10 +275,10 @@ class MetaAgent(BaseAgent[StateT]):
         """
         # Construct the path to the meta_prompt.md file
         prompt_path = os.path.join(
-            os.path.dirname(__file__), '..', 'prompt_engineering', 'meta_prompt.md'
+            os.path.dirname(__file__), "..", "prompt_engineering", "meta_prompt.md"
         )
         try:
-            with open(prompt_path, 'r', encoding='utf-8') as file:
+            with open(prompt_path, "r", encoding="utf-8") as file:
                 instructions = file.read()
             return instructions
         except FileNotFoundError:
@@ -273,7 +287,7 @@ class MetaAgent(BaseAgent[StateT]):
         except Exception as e:
             print(f"Error reading instructions from {prompt_path}: {e}")
             return ""
-            
+
     def get_guided_json(self, state: StateT) -> Dict[str, Any]:
         """
         Get guided JSON schema for response generation, aligning with meta_prompt.md.
@@ -289,81 +303,91 @@ class MetaAgent(BaseAgent[StateT]):
                     "properties": {
                         "workpad_summary": {
                             "type": "string",
-                            "description": "Extractively summarize information you have in the workpad, including the relevant sources as they relate to the requirements."
+                            "description": "Extractively summarize information you have in the workpad, including the relevant sources as they relate to the requirements.",
                         },
                         "reasoning_steps": {
                             "type": "string",
-                            "description": "Based on the workpad summary and the agents available to you, outline your reasoning steps for solving the requirements."
+                            "description": "Based on the workpad summary and the agents available to you, outline your reasoning steps for solving the requirements.",
                         },
                         "work_completion": {
                             "type": "string",
-                            "description": "Based on the workpad, determine if you have enough information to provide Type_2 work."
-                        }
+                            "description": "Based on the workpad, determine if you have enough information to provide Type_2 work.",
+                        },
                     },
-                    "required": ["workpad_summary", "reasoning_steps", "work_completion"],
+                    "required": [
+                        "workpad_summary",
+                        "reasoning_steps",
+                        "work_completion",
+                    ],
                     "description": "First set of actions",
-                    "additionalProperties": False
+                    "additionalProperties": False,
                 },
                 "step_2": {
                     "type": "object",
                     "properties": {
                         "review": {
                             "type": "string",
-                            "description": "Review your reasoning steps."
+                            "description": "Review your reasoning steps.",
                         },
                         "reasoning_steps_draft_2": {
                             "type": "string",
-                            "description": "Provide another draft of your reasoning steps with any amendments from your review."
-                        }
+                            "description": "Provide another draft of your reasoning steps with any amendments from your review.",
+                        },
                     },
                     "required": ["review", "reasoning_steps_draft_2"],
                     "description": "Second set of actions",
-                    "additionalProperties": False
+                    "additionalProperties": False,
                 },
                 "Agent": {
                     "type": "string",
-                    "description": "Carefully select the agent to instruct from the Agent Register; ensure you provide the agent name exactly as it appears on the register."
+                    "description": "Carefully select the agent to instruct from the Agent Register; ensure you provide the agent name exactly as it appears on the register.",
                 },
                 "step_3": {
                     "type": "object",
                     "properties": {
                         "draft_instructions": {
                             "type": "string",
-                            "description": "Provide draft Type_1 or Type_2 work based on the workpad; use the workpad summary and reasoning steps to inform your response."
+                            "description": "Provide draft Type_1 or Type_2 work based on the workpad; use the workpad summary and reasoning steps to inform your response.",
                         },
                         "review": {
                             "type": "string",
-                            "description": "Review the draft."
-                        }
+                            "description": "Review the draft.",
+                        },
                     },
                     "required": ["draft_instructions", "review"],
                     "description": "Third set of actions",
-                    "additionalProperties": False
+                    "additionalProperties": False,
                 },
                 "step_4": {
                     "type": "object",
                     "properties": {
                         "agent_alignment": {
                             "type": "string",
-                            "description": "Check that your draft aligns with the agent's capabilities."
+                            "description": "Check that your draft aligns with the agent's capabilities.",
                         },
                         "final_draft": {
                             "type": "string",
-                            "description": "Provide a final draft of your Type_1 or Type_2 work."
-                        }
+                            "description": "Provide a final draft of your Type_1 or Type_2 work.",
+                        },
                     },
                     "required": ["agent_alignment", "final_draft"],
                     "description": "Final steps",
-                    "additionalProperties": False
-                }
+                    "additionalProperties": False,
+                },
             },
             "required": ["step_1", "step_2", "Agent", "step_3", "step_4"],
-            "additionalProperties": False
+            "additionalProperties": False,
         }
 
         return guided_json_schema
 
-    def respond(self, instructions: str, requirements: str, state: StateT, agent_registry: StateT = AgentRegistry) -> str:
+    def respond(
+        self,
+        instructions: str,
+        requirements: str,
+        state: StateT,
+        agent_registry: StateT = AgentRegistry,
+    ) -> str:
         """
         Generate a response based on instructions and state.
 
@@ -374,26 +398,32 @@ class MetaAgent(BaseAgent[StateT]):
         :return: Generated response as a string.
         """
         guided_json = self.get_guided_json(state)
-        guided_json_str = json.dumps(guided_json).encode('unicode_escape').decode('utf-8')
+        guided_json_str = (
+            json.dumps(guided_json).encode("unicode_escape").decode("utf-8")
+        )
 
         # Unpack all key-value pairs in the state and include them in the message
         if state:
-            #workpad = "\n".join(f"{key}: {value}" for key, value in state.items())
-            workpad = "\n".join(f"{key}: {value}" for key, value in state.items() if key != 'meta_agent')
+            # workpad = "\n".join(f"{key}: {value}" for key, value in state.items())
+            workpad = "\n".join(
+                f"{key}: {value}" for key, value in state.items() if key != "meta_agent"
+            )
         else:
             workpad = "No previous state."
 
         if agent_registry:
-            agent_registry_content = "\n".join(f"{key}: {value}" for key, value in agent_registry.items())
+            agent_registry_content = "\n".join(
+                f"{key}: {value}" for key, value in agent_registry.items()
+            )
         else:
             agent_registry_content = "No previous agent registry."
 
         user_message = f"<user_requirements>\n{requirements}\n</user_requirements>\n<workpad>\n{workpad}\n</workpad>"
         system_prompt = f"{instructions}\n\n<agent_registry>\n{agent_registry_content}\n</agent_registry>\n\n You must respond in the following JSON format: {guided_json_str}"
 
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ] + [{"role": "user", "content": user_message}]
+        messages = [{"role": "system", "content": system_prompt}] + [
+            {"role": "user", "content": user_message}
+        ]
 
         json_llm = self.get_llm(json_response=True)
         response = json_llm.invoke(messages, guided_json=guided_json)
@@ -411,7 +441,7 @@ class MetaAgent(BaseAgent[StateT]):
         response = self.respond(instructions, requirements, state)
 
         # Write the response to the state
-        print(colored(f"DEBUG: MetaAgent response: {response}", 'red'))
+        print(colored(f"DEBUG: MetaAgent response: {response}", "red"))
         self.write_to_state(state, response)
 
         # Return the output
@@ -439,12 +469,18 @@ class ReporterAgent(BaseAgent[StateT]):
         - I cannot generate any response, I can only relay your response to the user.
     """
 
-    def __init__(self, name: str, model: str = "claude-3-5-sonnet-20240620", server: str = "anthropic", temperature: float = 0):
+    def __init__(
+        self,
+        name: str,
+        model: str = "claude-3-5-sonnet-20240620",
+        server: str = "anthropic",
+        temperature: float = 0,
+    ):
         super().__init__(name, model=model, server=server, temperature=temperature)
         print(f"ReporterAgent '{self.name}' initialized.")
 
-    #def invoke(self, state: StateT) -> Dict[str, Any]:
-        # @traceable(run_type="agent", metadata={"ls_provider": self.server, "ls_model_name": self.model})
+    # def invoke(self, state: StateT) -> Dict[str, Any]:
+    # @traceable(run_type="agent", metadata={"ls_provider": self.server, "ls_model_name": self.model})
     def invoke(self, state: StateT) -> Dict[str, Any]:
         """
         Invoke the agent's main functionality: process the instruction and return a response.
@@ -466,7 +502,7 @@ class ReporterAgent(BaseAgent[StateT]):
         # Return the output
         return state
 
-    #return _invoke()
+    # return _invoke()
 
 
 class SimpleAgent(BaseAgent[StateT]):
