@@ -1,6 +1,9 @@
 # Script for registering agents.
-
-# add_message creates this  [HumanMessage(content='Hello', id='1'), AIMessage(content='Hi there!', id='2')]
+# add_message creates this
+# [
+# HumanMessage(content='Hello', id='1'),
+# AIMessage(content='Hi there!', id='2')
+# ]
 from typing import Annotated, Any, List, TypedDict  # noqa
 
 from langgraph.graph.message import add_messages  # noqa
