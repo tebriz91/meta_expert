@@ -8,9 +8,7 @@ import chainlit as cl
 from termcolor import colored
 
 from agents.agent_base import MetaAgent, ReporterAgent, SimpleAgent
-
 from agents.offline_rag_websearch_agent import OfflineRAGWebsearchAgent
-
 from agents.serper_dev_agent import SerperDevAgent
 from agents.serper_dev_shopping_agent import SerperShoppingAgent
 from agents.web_scraper_agent import WebScraperAgent

@@ -18,8 +18,8 @@ def read_markdown_file(file_path: str) -> str:
         IOError: If there's an issue reading the file (e.g., permission error).
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
+        with open(file=file_path, mode="r", encoding="utf-8") as file:
+            content: str = file.read()
         return content
     except FileNotFoundError:
         print(f"Error: File not found at {file_path}")
