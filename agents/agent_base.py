@@ -488,13 +488,18 @@ class MetaAgent(BaseAgent[StateT]):
         """
         instructions = self.read_instructions(state)
         response = self.respond(
-            instructions=instructions,
-            requirements=requirements,
-            state=state,
+            instructions,
+            requirements,
+            state,
         )
 
         # Write the response to the state
-        print(colored(f"DEBUG: MetaAgent response: {response}", "red"))
+        print(
+            colored(
+                text=f"DEBUG: MetaAgent response: {response}",
+                color="red",
+            )
+        )
         self.write_to_state(state, response)
 
         # Return the output

@@ -70,10 +70,10 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         :param temperature: Controls randomness in model outputs
         """
         super().__init__(
-            name=name,
-            model=model,
-            server=server,
-            temperature=temperature,
+            name,
+            model,
+            server,
+            temperature,
         )
         self.location = "us"  # Default location for search
         print(f"SerperDevAgent '{self.name}' initialized.")

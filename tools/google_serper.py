@@ -1,9 +1,5 @@
 import json
 import os
-import sys
-
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
 from typing import Any, Dict
 
 import requests
@@ -27,7 +23,11 @@ def format_shopping_results(shopping_results: list) -> str:
         delivery = result.get("delivery", "Delivery information not available")
 
         result_strings.append(
-            f"Title: {title}\nSource: {source}\nPrice: {price}\nRating: {rating} ({rating_count} reviews)\nDelivery: {delivery}\nLink: {link}\n---"
+            (
+                f"Title: {title}\nSource: {source}\nPrice: {price}\n"
+                f"Rating: {rating} ({rating_count} reviews)\n"
+                f"Delivery: {delivery}\nLink: {link}\n---"
+            )
         )
 
     return "\n".join(result_strings)
@@ -41,7 +41,6 @@ def serper_search(query: str, location: str) -> Dict[str, Any]:
     :param location: The geographic location for the search.
     :return: Dictionary containing the search results.
     """
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
     search_url = "https://google.serper.dev/search"
     headers = {
         "Content-Type": "application/json",
@@ -49,7 +48,7 @@ def serper_search(query: str, location: str) -> Dict[str, Any]:
             "SERPER_API_KEY"
         ],  # Ensure this environment variable is set
     }
-    payload = json.dumps({"q": query, "gl": location})
+    payload = json.dumps(obj={"q": query, "gl": location})
 
     try:
         response = requests.post(search_url, headers=headers, data=payload)
@@ -66,7 +65,7 @@ def serper_search(query: str, location: str) -> Dict[str, Any]:
                     # Extract sitelinks if they exist
                     if isinstance(sitelinks, list):
                         sitelinks = [
-                            {"title": s.get("title", ""), "link": s.get("link", "")}
+                            {"title": s.get("title", ""), "link": s.get("link", "")}  # noqa: E501
                             for s in sitelinks
                         ]
                     else:
@@ -80,7 +79,7 @@ def serper_search(query: str, location: str) -> Dict[str, Any]:
                 else:
                     # Log or handle unexpected entry type
                     print(
-                        f"Entry at index {idx} in results['organic'] is not a dict: {type(result)}"
+                        f"Entry at index {idx} in results['organic'] is not a dict: {type(result)}"  # noqa: E501
                     )
         else:
             print("No 'organic' results found or 'organic' is not a list.")
@@ -107,13 +106,12 @@ def serper_shopping_search(query: str, location: str) -> Dict[str, Any]:
     :param location: The geographic location for the search.
     :return: Dictionary containing the shopping results.
     """
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
     search_url = "https://google.serper.dev/shopping"
     headers = {
         "Content-Type": "application/json",
         "X-API-KEY": os.environ["SERPER_API_KEY"],
     }
-    payload = json.dumps({"q": query, "gl": location})
+    payload = json.dumps(obj={"q": query, "gl": location})
 
     try:
         response = requests.post(search_url, headers=headers, data=payload)
@@ -140,7 +138,6 @@ def serper_scholar_search(query: str, location: str) -> Dict[str, Any]:
     :param location: The geographic location for the search.
     :return: Dictionary containing the scholar results.
     """
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
     search_url = "https://google.serper.dev/scholar"
     headers = {
         "Content-Type": "application/json",
@@ -148,7 +145,7 @@ def serper_scholar_search(query: str, location: str) -> Dict[str, Any]:
             "SERPER_API_KEY"
         ],  # Ensure this environment variable is set
     }
-    payload = json.dumps({"q": query, "gl": location})
+    payload = json.dumps(obj={"q": query, "gl": location})
 
     try:
         response = requests.post(search_url, headers=headers, data=payload)
@@ -192,8 +189,8 @@ def format_search_results(search_results: Dict[str, Any]) -> str:
             for sitelink in sitelinks:
                 sitelink_title = sitelink.get("title", "No Title")
                 sitelink_link = sitelink.get("link", "No Link")
-                sitelinks_strings.append(f"    - {sitelink_title}: {sitelink_link}")
-            sitelinks_formatted = "\nSitelinks:\n" + "\n".join(sitelinks_strings)
+                sitelinks_strings.append(f"    - {sitelink_title}: {sitelink_link}")  # noqa: E501
+            sitelinks_formatted = "\nSitelinks:\n" + "\n".join(sitelinks_strings)  # noqa: E501
             result_string += sitelinks_formatted
         else:
             result_string += "\nSitelinks: None"
@@ -209,6 +206,6 @@ def format_search_results(search_results: Dict[str, Any]) -> str:
 # Example usage
 if __name__ == "__main__":
     search_query = "NVIDIA RTX 6000"
-    results = serper_search(search_query, "us")
+    results = serper_search(search_query, location="us")
     formatted_results = format_search_results(results)
     print(formatted_results)

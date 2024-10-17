@@ -39,8 +39,7 @@ async def start() -> None:
     IMPORTANT: Every Agent team must have a MetaAgent called
     "meta_agent" and a ReporterAgent called "reporter_agent".
     IMPORTANT: server names can be "openai" or "anthropic"
-    IMPORTANT: for openai models use gpt-4o
-    or gpt-4o-mini
+    IMPORTANT: for openai models use gpt-4o or gpt-4o-mini
     """
     # Add new agents here:
     meta_agent = MetaAgent(
@@ -73,7 +72,6 @@ async def start() -> None:
         model="gpt-4o-mini",
         temperature=0,
     )
-
     # Note reporter agent does not call llms.
     reporter_agent = ReporterAgent(
         name="reporter_agent",
@@ -81,7 +79,6 @@ async def start() -> None:
         model="gpt-4o-mini",
         temperature=0,
     )
-
     llm = SimpleAgent(
         name="chat_model",
         server="openai",
@@ -135,10 +132,7 @@ def build_chat_workflow(agent_team, requirements, configs=None, state=None):
     :param state: Optional initial state for the workflow.
     :return: Compiled workflow and initial state.
     """
-    workflow, state = build_workflow(
-        agent_team=agent_team,
-        requirements=requirements,
-    )
+    workflow, state = build_workflow(agent_team, requirements)
 
     return workflow, state
 
