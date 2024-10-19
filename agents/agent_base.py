@@ -4,9 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, TypeVar
 
 from langchain_core.documents.base import Document
+from langsmith import traceable
 from termcolor import colored
 
-from agents.agent_registry import AgentRegistry
+from agents.agent_registry import AgentRegistry, agent_registry
 from models.llms import (
     ClaudeModel,
     GeminiModel,
@@ -134,7 +135,8 @@ class BaseAgent(ABC, Generic[StateT]):
 
         # Store the agent's description in the AgentRegistry
         if self.name != "meta_agent":
-            AgentRegistry[self.name] = agent_description
+            # AgentRegistry[self.name] = agent_description
+            agent_registry[self.name] = agent_description
             print(f"Agent '{self.name}' registered in AgentRegistry.")
 
         state[self.name] = []
@@ -549,8 +551,7 @@ class ReporterAgent(BaseAgent[StateT]):
         )
         print(f"ReporterAgent '{self.name}' initialized.")
 
-    # def invoke(self, state: StateT) -> Dict[str, Any]:
-    # @traceable(run_type="agent", metadata={"ls_provider": self.server, "ls_model_name": self.model}) # noqa: E501
+    @traceable(run_type="agent")  # noqa: E501
     def invoke(self, state: StateT) -> Dict[str, Any]:
         """
         Invoke the agent's main functionality: process the instruction

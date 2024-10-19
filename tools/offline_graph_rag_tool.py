@@ -1,10 +1,7 @@
-import os
-import sys
-
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
 import concurrent.futures
 import functools
+import os
+import sys
 import traceback
 from typing import Any, Dict, List
 
@@ -22,12 +19,10 @@ from langchain_openai import ChatOpenAI
 from llmsherpa.readers import LayoutPDFReader
 from termcolor import colored
 
-from tools.llm_graph_transformer import LLMGraphTransformer
-
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
+from tools.llm_graph_transformer import LLMGraphTransformer  # noqa: E402
 
 ua = UserAgent()
 os.environ["USER_AGENT"] = ua.random
@@ -284,7 +279,7 @@ def run_hybrid_graph_retrieval(
     :param rag_mode: Retrieval mode (Hybrid or Dense).
     :return: Retrieved context.
     """
-    print(colored("\n\Initiating Retrieval...\n\n", "green"))
+    print(colored("\n\nInitiating Retrieval...\n\n", "green"))
 
     if rag_mode == "Hybrid":
         print(colored("Running Hybrid Retrieval...", "yellow"))

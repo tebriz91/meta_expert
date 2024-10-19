@@ -1,37 +1,53 @@
-# agents/intelligent_scraper_agent.py
-
-from typing import Dict, Any, TypeVar, List
 import json
-from .agent_base import ToolCallingAgent, StateT
-from tools.offline_graph_rag_tool import run_rag
+import os
+import sys
+from typing import Any, Dict
+
 from langsmith import traceable
+
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+from agents.agent_base import StateT, ToolCallingAgent  # noqa: E402
+from tools.offline_graph_rag_tool import run_rag  # noqa: E402
+
 
 class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
     """
     # Functionality:
-    This agent extracts **specific information** from web pages by processing them using a Retrieval-Augmented Generation (RAG) approach. Use this tool when you need precise answers or data related to particular queries from web pages.
+    This agent extracts **specific information** from web pages by processing
+    them using a Retrieval-Augmented Generation (RAG) approach. Use this tool
+    when you need precise answers or data related to particular queries
+    from web pages.
 
     ## Inputs:
         - **url**: The URL of the web page to process.
-        - **query**: The specific question or topic to search for within the web page.
+        - **query**: The specific question or topic to search for within
+        the web page.
 
     You can provide multiple url-query pairs.
 
     ## Outputs:
-    - A JSON-formatted string containing the specific information retrieved from each webpage, along with its corresponding URL.
+    - A JSON-formatted string containing the specific information retrieved
+    from each webpage, along with its corresponding URL.
 
     ## When to Use:
-    - When you need to extract specific pieces of information or answers to particular questions from web pages.
+    - When you need to extract specific pieces of information or answers
+    to particular questions from web pages.
     - After obtaining URLs and needing targeted information from those pages.
 
     ## Important Notes:
-    - This tool processes the content of each URL to find information relevant to the provided query.
-    - It is more efficient than web scraping when you only need specific data rather than the entire page content.
+    - This tool processes the content of each URL to find information relevant
+    to the provided query.
+    - It is more efficient than web scraping when you only need specific data
+    rather than the entire page content.
 
     ## Example Workflow:
     1. **Get URLs**: Get the search engine results page (SERP).
-    2. **Define Queries**: Formulate specific queries for the information you need from each URL.
-    3. **Extract Information**: Use this agent to retrieve targeted information.
+    2. **Define Queries**: Formulate specific queries for the information
+    you need from each URL.
+    3. **Extract Information**: Use this agent to retrieve targeted
+    information.
 
     # Remember
     You should provide the inputs as suggested.
@@ -39,7 +55,13 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
     --------------------------------
     """
 
-    def __init__(self, name: str, model: str = "claude-3-5-sonnet-20240620", server: str = "anthropic", temperature: float = 0):
+    def __init__(
+        self,
+        name: str,
+        model: str = "claude-3-5-sonnet-20240620",
+        server: str = "anthropic",
+        temperature: float = 0,
+    ):
         """
         Initialize the OfflineRAGWebsearchAgent with common parameters.
 
@@ -48,12 +70,19 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
         :param server: The server hosting the language model
         :param temperature: Controls randomness in model outputs
         """
-        super().__init__(name, model=model, server=server, temperature=temperature)
+        super().__init__(
+            name=name,
+            model=model,
+            server=server,
+            temperature=temperature,
+        )
         print(f"OfflineRAGWebsearchAgent '{self.name}' initialized.")
 
+    @traceable
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
-        Get guided JSON schema for the intelligent chunking tool, expecting a list of URL-query pairs.
+        Get guided JSON schema for the intelligent chunking tool,
+        expecting a list of URL-query pairs.
 
         :param state: The current state of the agent.
         :return: Guided JSON schema as a dictionary.
@@ -68,25 +97,30 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
                         "properties": {
                             "url": {
                                 "type": "string",
-                                "description": "The URL of the web page to process."
+                                "description": "The URL of the web page to process.",  # noqa: E501
                             },
                             "query": {
                                 "type": "string",
-                                "description": "The specific query or topic to search for on the web page."
-                            }
+                                "description": "The specific query or topic to search for on the web page.",  # noqa: E501
+                            },
                         },
                         "required": ["url", "query"],
-                        "additionalProperties": False
+                        "additionalProperties": False,
                     },
                     "description": "A list of URL and query pairs to process.",
                 }
             },
             "required": ["url_query_pairs"],
-            "additionalProperties": False
+            "additionalProperties": False,
         }
         return guided_json_schema
 
-    def execute_tool(self, tool_response: Dict[str, Any], state: StateT = None) -> Any:
+    @traceable
+    def execute_tool(
+        self,
+        tool_response: Dict[str, Any],
+        state: StateT = None,
+    ) -> Any:
         """
         Execute the run_rag method on a list of URL-query pairs.
         Returns the results as a JSON-formatted string.
@@ -97,7 +131,7 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
         """
         url_query_pairs = tool_response.get("url_query_pairs")
         if not url_query_pairs:
-            raise ValueError("url_query_pairs are missing from the tool response")
+            raise ValueError("url_query_pairs are missing from the tool response")  # noqa: E501
         print(f"{self.name} is processing URL-query pairs: {url_query_pairs}")
 
         # Extract URLs and queries
@@ -110,7 +144,7 @@ class OfflineRAGWebsearchAgent(ToolCallingAgent[StateT]):
             allowed_nodes=None,
             allowed_relationships=None,
             query=queries,
-            rag_mode="Dense"  # or "Hybrid" based on your requirements
+            rag_mode="Dense",  # or "Hybrid" based on your requirements
         )
 
         # Convert the results to JSON string

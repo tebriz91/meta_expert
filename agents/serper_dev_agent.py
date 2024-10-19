@@ -1,11 +1,16 @@
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
+from langsmith import traceable
 from termcolor import colored
 
-from tools.google_serper import format_search_results, serper_search
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
 
-from .agent_base import StateT, ToolCallingAgent
+from agents.agent_base import StateT, ToolCallingAgent  # noqa: E402
+from tools.google_serper import format_search_results, serper_search  # noqa: E402, E501
 
 
 class SerperDevAgent(ToolCallingAgent[StateT]):
@@ -78,6 +83,7 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         self.location = "us"  # Default location for search
         print(f"SerperDevAgent '{self.name}' initialized.")
 
+    @traceable
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Define the guided JSON schema expecting a list of search queries.
@@ -111,6 +117,7 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         }
         return guided_json_schema
 
+    @traceable
     def execute_tool(
         self,
         tool_response: Dict[str, Any],
@@ -180,29 +187,29 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         return combined_results
 
 
-if __name__ == "__main__":
-    # Create an instance of SerperDevAgent for testing
-    agent = SerperDevAgent(name="TestSerperAgent")
+# if __name__ == "__main__":
+#     # Create an instance of SerperDevAgent for testing
+#     agent = SerperDevAgent(name="TestSerperAgent")
 
-    # Create a sample tool response
-    test_tool_response = {
-        "queries": ["Python programming", "Machine learning basics"],
-        "location": "us",
-    }
+#     # Create a sample tool response
+#     test_tool_response = {
+#         "queries": ["Python programming", "Machine learning basics"],
+#         "location": "us",
+#     }
 
-    # Create a sample state (can be None or an empty dict for this test)
-    test_state = {}
+#     # Create a sample state (can be None or an empty dict for this test)
+#     test_state = {}
 
-    # Execute the tool and print the results
-    try:
-        results = agent.execute_tool(
-            tool_response=test_tool_response,
-            state=test_state,
-        )
-        print("Search Results:")
-        print(results)
-    except Exception as e:
-        print(f"An error occurred: {e}")
+#     # Execute the tool and print the results
+#     try:
+#         results = agent.execute_tool(
+#             tool_response=test_tool_response,
+#             state=test_state,
+#         )
+#         print("Search Results:")
+#         print(results)
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
-    # You can add more test cases or assertions
-    # here to verify the functionality
+#     # You can add more test cases or assertions
+#     # here to verify the functionality

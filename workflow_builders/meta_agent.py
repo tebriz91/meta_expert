@@ -78,11 +78,17 @@ def build_workflow(
             str: The name of the next agent node to be invoked.
         """
         print(colored(text=f"\n\nDEBUG: State: {state}\n\n", color="red"))
+        # If there is no key "meta_agent" the state defaults to an empty string
         if state.get("meta_agent", ""):
+            # Extract the last responce from meta_agent
             meta_agent_response = state.get("meta_agent", "")[-1].page_content
             try:
+                # Parse meta_agent_response as JSON
                 meta_agent_response_json = json.loads(meta_agent_response)
+                # Extract the value associated with the "Agent" key
                 next_agent = meta_agent_response_json.get("Agent")
+                # Map the agent name to its corresponding node name
+                # If it fails, it defaults to END
                 next_agent_node = agent_nodes.get(next_agent, END)
             except json.JSONDecodeError:
                 next_agent_node = END

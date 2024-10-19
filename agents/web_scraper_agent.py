@@ -1,10 +1,17 @@
 import json
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
-from tools.basic_scraper import scraper
+from langsmith import traceable
 
-from .agent_base import StateT, ToolCallingAgent
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, root_dir)
+
+
+from agents.agent_base import StateT, ToolCallingAgent  # noqa: E402
+from tools.basic_scraper import scraper  # noqa: E402
 
 
 class WebScraperAgent(ToolCallingAgent[StateT]):
@@ -67,6 +74,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         )
         print(f"WebScraperAgent '{self.name}' initialized.")
 
+    @traceable
     def get_guided_json(self) -> Dict[str, Any]:
         """
         Get guided JSON schema for the scraper tool, expecting a list of URLs.
@@ -91,6 +99,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         }
         return guided_json_schema
 
+    @traceable
     def execute_tool(
         self,
         tool_response: Dict[str, Any],

@@ -203,9 +203,9 @@ def format_search_results(search_results: Dict[str, Any]) -> str:
     return final_string
 
 
-# Example usage
-if __name__ == "__main__":
-    search_query = "NVIDIA RTX 6000"
-    results = serper_search(search_query, location="us")
-    formatted_results = format_search_results(results)
-    print(formatted_results)
+# # Example usage
+# if __name__ == "__main__":
+#     search_query = "NVIDIA RTX 6000"
+#     results = serper_search(search_query, location="us")
+#     formatted_results = format_search_results(results)
+#     print(formatted_results)

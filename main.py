@@ -5,21 +5,12 @@ import re
 import time
 
 import chainlit as cl
-from langgraph.checkpoint.memory import MemorySaver  # noqa: F401
-from langgraph.graph import END, START, MessagesState, StateGraph  # noqa: F401
 from termcolor import colored
 
-from agents.agent_base import (  # noqa: F401
-    BaseAgent,
-    MetaAgent,
-    ReporterAgent,
-    SimpleAgent,
-)
-from agents.agent_registry import AgentRegistry  # noqa: F401
-from agents.agent_workpad import create_state_typed_dict  # noqa: F401
+from agents.agent_base import MetaAgent, ReporterAgent, SimpleAgent
 from agents.offline_rag_websearch_agent import OfflineRAGWebsearchAgent
 from agents.serper_dev_agent import SerperDevAgent
-from agents.serper_dev_shopping_agent import SerperShoppingAgent  # noqa: F401
+from agents.serper_dev_shopping_agent import SerperShoppingAgent
 from agents.web_scraper_agent import WebScraperAgent
 from workflow_builders.meta_agent import build_workflow
 
@@ -255,13 +246,13 @@ async def main(message: cl.Message) -> None:
     meta_agent = cl.user_session.get("meta_agent")
     serper_agent = cl.user_session.get("serper_agent")
     web_scraper_agent = cl.user_session.get("web_scraper_agent")
-    offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
+    # * offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
     reporter_agent = cl.user_session.get("reporter_agent")
-    serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
+    # * serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
     chat_model = cl.user_session.get("chat_model")
     system_prompt = cl.user_session.get("system_prompt")
     conversation_history = cl.user_session.get(
-        "conversation_history", []
+        "conversation_history", default=[]
     )  # Default to empty list if not set
     state = cl.user_session.get("state")
 
@@ -287,9 +278,9 @@ async def main(message: cl.Message) -> None:
     agent_team = [
         meta_agent,
         serper_agent,
-        serper_shopping_agent,
+        # * serper_shopping_agent,
         web_scraper_agent,
-        offline_rag_websearch_agent,
+        # * offline_rag_websearch_agent,
         reporter_agent,
     ]
     # agent_team = [meta_agent, serper_agent, offline_rag_websearch_agent, reporter_agent] # noqa: E501
