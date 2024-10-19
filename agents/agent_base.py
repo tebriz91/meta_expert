@@ -7,7 +7,7 @@ from langchain_core.documents.base import Document
 from langsmith import traceable
 from termcolor import colored
 
-from agents.agent_registry import AgentRegistry, agent_registry
+from agents.agent_registry import AgentRegistry
 from models.llms import (
     ClaudeModel,
     GeminiModel,
@@ -135,8 +135,7 @@ class BaseAgent(ABC, Generic[StateT]):
 
         # Store the agent's description in the AgentRegistry
         if self.name != "meta_agent":
-            # AgentRegistry[self.name] = agent_description
-            agent_registry[self.name] = agent_description
+            AgentRegistry[self.name] = agent_description
             print(f"Agent '{self.name}' registered in AgentRegistry.")
 
         state[self.name] = []
@@ -228,18 +227,12 @@ class ToolCallingAgent(BaseAgent[StateT]):
             .decode(encoding="utf-8")
         )
 
-        messages = (
-            [
-                {
-                    "role": "system",
-                    "content": (
-                        "Take the following instructions and return the specified JSON: "  # noqa: E501
-                        f"{guided_json_str}."
-                    ),
-                },
-            ]
-            + [{"role": "user", "content": instructions}]
-        )
+        messages = [
+            {
+                "role": "system",
+                "content": f"Take the following instructions and return the specified JSON: {guided_json_str}.",  # noqa: E501
+            },
+        ] + [{"role": "user", "content": instructions}]
 
         json_llm = self.get_llm(json_response=True)
         response = json_llm.invoke(messages, guided_json=guided_json)
@@ -301,7 +294,7 @@ class MetaAgent(BaseAgent[StateT]):
     An agent that generates responses based on instructions and state.
     """
 
-    def read_instructions(self) -> str:
+    def read_instructions(self, state: StateT) -> str:
         """
         Read instructions from the 'meta_prompt.md' file
         in the 'prompt_engineering' folder.
@@ -327,7 +320,7 @@ class MetaAgent(BaseAgent[StateT]):
             print(f"Error reading instructions from {prompt_path}: {e}")
             return ""
 
-    def get_guided_json(self) -> Dict[str, Any]:
+    def get_guided_json(self, state: StateT) -> Dict[str, Any]:
         """
         Get guided JSON schema for response generation,
         aligning with meta_prompt.md.
@@ -462,15 +455,9 @@ class MetaAgent(BaseAgent[StateT]):
         else:
             agent_registry_content = "No previous agent registry."
 
-        user_message = (
-            f"<user_requirements>\n{requirements}\n</user_requirements>\n"
-            f"<workpad>\n{workpad}\n</workpad>"
-        )
-        system_prompt = (
-            f"{instructions}\n\n<agent_registry>\n{agent_registry_content}\n"
-            f"</agent_registry>\n\n You must respond in the following JSON format: "  # noqa: E501
-            f"{guided_json_str}"
-        )
+        user_message = f"<user_requirements>\n{requirements}\n</user_requirements>\n<workpad>\n{workpad}\n</workpad>"  # noqa: E501
+
+        system_prompt = f"{instructions}\n\n<agent_registry>\n{agent_registry_content}\n</agent_registry>\n\n You must respond in the following JSON format: {guided_json_str}"  # noqa: E501
 
         messages = [{"role": "system", "content": system_prompt}] + [
             {"role": "user", "content": user_message}
@@ -539,8 +526,8 @@ class ReporterAgent(BaseAgent[StateT]):
     def __init__(
         self,
         name: str,
-        model: str = "claude-3-5-sonnet-20240620",
-        server: str = "anthropic",
+        model: str = "gpt-4o",
+        server: str = "openai",
         temperature: float = 0,
     ) -> None:
         super().__init__(
@@ -551,7 +538,7 @@ class ReporterAgent(BaseAgent[StateT]):
         )
         print(f"ReporterAgent '{self.name}' initialized.")
 
-    @traceable(run_type="agent")  # noqa: E501
+    @traceable
     def invoke(self, state: StateT) -> Dict[str, Any]:
         """
         Invoke the agent's main functionality: process the instruction
@@ -578,7 +565,7 @@ class ReporterAgent(BaseAgent[StateT]):
 
 
 class SimpleAgent(BaseAgent[StateT]):
-    def invoke(self) -> Dict[str, Any]:
+    def invoke(self, state: StateT) -> Dict[str, Any]:
         # Implement the required method, even if it's just
         # a pass or a simple implementation
         return {}

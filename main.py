@@ -67,7 +67,7 @@ async def start() -> None:
     reporter_agent = ReporterAgent(
         name="reporter_agent",
         server="openai",
-        model="gpt-4o-mini",
+        model="gpt-4o",
         temperature=0,
     )
     llm = SimpleAgent(
@@ -224,10 +224,18 @@ async def run_workflow(workflow, state, configs):
     await task_list.send()
 
     # Retrieve the final state
-    final_message = state.get("meta_agent", "No response from ReporterAgent")[
-        -1
-    ].page_content
-    response_json = json.loads(final_message)
+    meta_agent_response = state.get("meta_agent", [])
+    if not meta_agent_response:
+        final_message = "No response from ReporterAgent"
+    else:
+        final_message = meta_agent_response[-1].page_content
+
+    # Ensure final_message is a valid JSON string
+    try:
+        response_json = json.loads(final_message)
+    except json.JSONDecodeError:
+        response_json = {}
+
     message = response_json.get("step_4", {}).get(
         "final_draft", "No final draft available."
     )
@@ -246,9 +254,9 @@ async def main(message: cl.Message) -> None:
     meta_agent = cl.user_session.get("meta_agent")
     serper_agent = cl.user_session.get("serper_agent")
     web_scraper_agent = cl.user_session.get("web_scraper_agent")
-    # * offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
+    offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
     reporter_agent = cl.user_session.get("reporter_agent")
-    # * serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
+    serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
     chat_model = cl.user_session.get("chat_model")
     system_prompt = cl.user_session.get("system_prompt")
     conversation_history = cl.user_session.get(
@@ -269,18 +277,15 @@ async def main(message: cl.Message) -> None:
                 color="red",
             )
         )
-        system_prompt = (
-            f"{system_prompt}\n\nLast message from the agent:\n"
-            f"<prev_work>{previous_work}</prev_work>"
-        )
+        system_prompt = f"{system_prompt}\n\nLast message from the agent:\n<prev_work>{previous_work}</prev_work>"  # noqa: E501
 
     # Add new agents to the agent_team
     agent_team = [
         meta_agent,
         serper_agent,
-        # * serper_shopping_agent,
+        serper_shopping_agent,
         web_scraper_agent,
-        # * offline_rag_websearch_agent,
+        offline_rag_websearch_agent,
         reporter_agent,
     ]
     # agent_team = [meta_agent, serper_agent, offline_rag_websearch_agent, reporter_agent] # noqa: E501

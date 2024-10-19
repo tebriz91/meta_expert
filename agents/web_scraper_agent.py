@@ -75,7 +75,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         print(f"WebScraperAgent '{self.name}' initialized.")
 
     @traceable
-    def get_guided_json(self) -> Dict[str, Any]:
+    def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
         """
         Get guided JSON schema for the scraper tool, expecting a list of URLs.
 
@@ -103,6 +103,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
     def execute_tool(
         self,
         tool_response: Dict[str, Any],
+        state: StateT = None,
     ) -> Any:
         """
         Execute the scraper tool on a list of URLs

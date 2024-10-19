@@ -7,7 +7,12 @@ from typing import Any, Dict, List
 import requests
 from langsmith import Client
 from langsmith.run_helpers import traceable
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 from utils.logging import setup_logging
 
@@ -21,6 +26,7 @@ class BaseModel:
     Base class for all language models.
     Provides common functionality for invoking models and handling retries.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -87,6 +93,7 @@ class MistralModel(BaseModel):
     """
     Mistral language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -187,6 +194,7 @@ class ClaudeModel(BaseModel):
     """
     Claude language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -301,6 +309,7 @@ class GeminiModel(BaseModel):
     """
     Gemini language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -387,6 +396,7 @@ class GroqModel(BaseModel):
     """
     Groq language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -469,6 +479,7 @@ class OllamaModel(BaseModel):
     """
     Ollama language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -572,6 +583,7 @@ class VllmModel(BaseModel):
     """
     Vllm language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -661,6 +673,7 @@ class OpenAIModel(BaseModel):
     """
     OpenAI language model class.
     """
+
     def __init__(
         self,
         temperature: float,
@@ -744,6 +757,8 @@ class OpenAIModel(BaseModel):
                     "schema": guided_json,
                 },
             }
+
+        # print(f"DEBUG PAYLOAD: {payload}")
 
         try:
             response_json = self._make_request(

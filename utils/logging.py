@@ -1,16 +1,17 @@
 # File: logging_utils.py
 
 import logging
-import colorlog
-from functools import wraps
 import time
-from typing import Callable, Any, Union
-import json
+from functools import wraps
+from typing import Any, Callable
+
+import colorlog
+
 
 def setup_logging(level=logging.INFO, log_file=None):
     """
     Set up logging configuration with colored output and improved formatting.
-    
+
     Args:
     level (int): The logging level (e.g., logging.DEBUG, logging.INFO)
     log_file (str, optional): Path to a log file. If None, log to console only.
@@ -20,14 +21,14 @@ def setup_logging(level=logging.INFO, log_file=None):
         datefmt="%Y-%m-%d %H:%M:%S",
         reset=True,
         log_colors={
-            'DEBUG':    'cyan',
-            'INFO':     'green',
-            'WARNING':  'yellow',
-            'ERROR':    'red',
-            'CRITICAL': 'red,bg_white',
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "red,bg_white",
         },
         secondary_log_colors={},
-        style='%'
+        style="%",
     )
 
     console_handler = colorlog.StreamHandler()
@@ -38,38 +39,44 @@ def setup_logging(level=logging.INFO, log_file=None):
     logger.addHandler(console_handler)
 
     if log_file:
-        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
+
 def format_dict(d, indent=0):
     """
     Format a dictionary for pretty printing.
-    
+
     Args:
     d (dict): The dictionary to format.
     indent (int): The indentation level for nested dictionaries.
-    
+
     Returns:
     str: The formatted dictionary as a string.
     """
-    return '\n'.join(f"{'  ' * indent}{k}: {format_dict(v, indent+1) if isinstance(v, dict) else v}" for k, v in d.items())
+    return "\n".join(
+        f"{'  ' * indent}{k}: {format_dict(v, indent + 1) if isinstance(v, dict) else v}"
+        for k, v in d.items()
+    )
+
 
 def log_function(logger: logging.Logger):
     """
     A decorator that logs function entry, exit, arguments, and execution time with improved formatting.
-    
+
     Args:
     logger (logging.Logger): The logger to use for logging.
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             func_name = func.__name__
             logger.info(f"{'=' * 40}")
             logger.info(f"Starting: {func_name}")
-            
+
             # Log arguments in a more readable format
             if args or kwargs:
                 logger.debug("Arguments:")
@@ -85,19 +92,19 @@ def log_function(logger: logging.Logger):
                             logger.debug(f"  {key}:\n{format_dict(value, 2)}")
                         else:
                             logger.debug(f"  {key}: {value}")
-            
+
             start_time = time.time()
             try:
                 result = func(*args, **kwargs)
                 logger.info(f"Completed: {func_name}")
-                
+
                 # Log the result
                 if result:
                     if isinstance(result, dict):
                         logger.info(f"Output:\n{format_dict(result, 1)}")
                     else:
                         logger.info(f"Output: {result}")
-                
+
                 return result
             except Exception as e:
                 logger.exception(f"Exception in {func_name}:")
@@ -107,6 +114,7 @@ def log_function(logger: logging.Logger):
                 duration = time.time() - start_time
                 logger.debug(f"Execution time: {duration:.2f} seconds")
                 logger.info(f"{'=' * 40}\n")
-        
+
         return wrapper
+
     return decorator
