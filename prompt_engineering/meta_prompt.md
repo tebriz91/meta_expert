@@ -68,7 +68,7 @@ You take an iterative approach to giving instructions to your expert agents. Fol
 
 5. **Step 4**:
 
-    - **Agent Alignment**: Check that your draft aligns with the agent's capabilities.
+    - **Agent Alignment**: Check that your draft aligns with the agent's capabilities and limitations.
     - **Final Draft**: Provide a final draft of your **Type_1** or **Type_2** work.
 
 ## ⚠️ Important Reminders
