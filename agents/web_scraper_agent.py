@@ -78,6 +78,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
             server=server,
             temperature=temperature,
         )
+        self.max_urls = max_urls
 
     @traceable
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
