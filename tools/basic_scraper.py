@@ -21,11 +21,12 @@ def scraper(url: str) -> dict:
     :param url: The URL to scrape.
     :return: A dictionary containing the source URL and the scraped content.
     """
-    print(colored(f"\n\nStarting basic scraping with URL: {url}\n\n", color="green"))  # noqa: E501
+    print(colored(f"\nStarting basic scraping with URL: {url}\n", color="green"))  # noqa: E501
     try:
         print(colored(f"Starting HTML scraper with URL: {url}", color="green"))
         loader = AsyncChromiumLoader([url])
         html = loader.load()
+        # TODO: Reduce the text size scraped
         # Transform
         bs_transformer = BeautifulSoupTransformer()
         docs_transformed = bs_transformer.transform_documents(
@@ -34,7 +35,7 @@ def scraper(url: str) -> dict:
         # Combine content from all paragraphs
         content = "\n".join([doc.page_content for doc in docs_transformed])
         result = {"source": url, "content": content}
-        print(result)
+        # print(result)
         return result
     except Exception as html_exc:
         print(
@@ -50,7 +51,7 @@ def scraper(url: str) -> dict:
             # Combine content from all pages
             content = "\n".join([page.page_content for page in pages])
             result = {"source": url, "content": content}
-            print(result)
+            # print(result)
             return result
         except Exception as pdf_exc:
             print(
@@ -63,7 +64,7 @@ def scraper(url: str) -> dict:
                 "source": url,
                 "content": "Unsupported document type, supported types are 'html' and 'pdf'.",  # noqa: E501
             }
-            print(result)
+            # print(result)
             return result
 
 
