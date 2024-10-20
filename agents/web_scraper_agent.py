@@ -5,10 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 from langsmith import traceable
+from termcolor import colored
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
-
 
 from agents.agent_base import StateT, ToolCallingAgent  # noqa: E402
 from tools.basic_scraper import scraper  # noqa: E402
@@ -17,12 +17,14 @@ from tools.basic_scraper import scraper  # noqa: E402
 class WebScraperAgent(ToolCallingAgent[StateT]):
     """
     # Functionality:
-    This agent scrapes the **entire content** from web pages provided in a
-    list of URLs. Use this tool when you need comprehensive information or
-    global context from web pages.
+    This agent scrapes the **entire content** from a limited number (<=3)
+    of web pages provided in a list of URLs ordered by relevance.
+    Use this tool when you need comprehensive information or global context
+    from web pages.
 
     ## Inputs:
-    - **urls**: A list of URLs to scrape.
+    - **urls**: A list of URLs to scrape. The number of URLs should not exceed
+      the specified limit (<=3).
 
     ## Outputs:
     - A JSON-formatted string containing the scraped content from each webpage,
@@ -38,6 +40,8 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
     URLs.
     - If you only need specific information from the web pages, consider using
     the `OfflineRAGWebsearchAgent` instead.
+    - The number of URLs to scrape is limited to avoid exceeding the context
+    window of the LLM.
 
     ## Example Workflow:
     1. **Obtain URLs**: Get search results and extract URLs.
@@ -57,6 +61,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         model: str = "gpt-4o-mini",
         server: str = "openai",
         temperature: float = 0,
+        max_urls: int = 3,  # New parameter to limit the number of URLs
     ) -> None:
         """
         Initialize the WebScraperAgent with common parameters.
@@ -65,6 +70,7 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         :param model: The name of the language model to use
         :param server: The server hosting the language model
         :param temperature: Controls randomness in model outputs
+        :param max_urls: The maximum number of URLs to scrape
         """
         super().__init__(
             name=name,
@@ -72,7 +78,10 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
             server=server,
             temperature=temperature,
         )
-        print(f"WebScraperAgent '{self.name}' initialized.")
+        self.max_urls = max_urls
+        print(
+            f"WebScraperAgent '{self.name}' initialized with max_urls={self.max_urls}."  # noqa: E501
+        )
 
     @traceable
     def get_guided_json(self, state: StateT = None) -> Dict[str, Any]:
@@ -117,6 +126,16 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
         urls: Any | None = tool_response.get("urls")
         if not urls:
             raise ValueError("URLs are missing from the tool response")
+
+        # ! DEBUG Warn about the limit on the number of URLs
+        if len(urls) > self.max_urls:
+            print(
+                colored(
+                    text=f"\n\nNumber of URLs exceeds the limit of {self.max_urls}\n\n",  # noqa: E501
+                    color="red",
+                )
+            )
+
         print(f"{self.name} is scraping URLs: {urls}")
 
         # Define a function for scraping a single URL
