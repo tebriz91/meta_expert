@@ -39,8 +39,8 @@ def build_workflow(
     for agent in agent_team:
         agent.register(state)
 
-    print(colored(text=f"\n\nDEBUG: State: {State}\n\n", color="red"))
-    print(colored(text=f"\nInitial state:\n\n{state}\n\n", color="blue"))
+    # print(colored(text=f"\n\nDEBUG: State: {State}\n\n", color="red"))
+    # print(colored(text=f"\nInitial state:\n\n{state}\n\n", color="blue"))
 
     # Define the graph
     graph = StateGraph(state_schema=State)
@@ -77,7 +77,7 @@ def build_workflow(
         Returns:
             str: The name of the next agent node to be invoked.
         """
-        print(colored(text=f"\n\nDEBUG: State: {state}\n\n", color="red"))
+        # print(colored(text=f"\n\nDEBUG: State: {state}\n\n", color="red"))
         # If there is no key "meta_agent" the state defaults to an empty string
         if state.get("meta_agent", ""):
             # Extract the last responce from meta_agent
