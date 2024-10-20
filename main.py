@@ -254,9 +254,9 @@ async def main(message: cl.Message) -> None:
     meta_agent = cl.user_session.get("meta_agent")
     serper_agent = cl.user_session.get("serper_agent")
     web_scraper_agent = cl.user_session.get("web_scraper_agent")
-    offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
+    # offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
     reporter_agent = cl.user_session.get("reporter_agent")
-    serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
+    # serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
     chat_model = cl.user_session.get("chat_model")
     system_prompt = cl.user_session.get("system_prompt")
     conversation_history = cl.user_session.get(
@@ -283,9 +283,9 @@ async def main(message: cl.Message) -> None:
     agent_team = [
         meta_agent,
         serper_agent,
-        serper_shopping_agent,
+        # serper_shopping_agent,
         web_scraper_agent,
-        offline_rag_websearch_agent,
+        # offline_rag_websearch_agent,
         reporter_agent,
     ]
     # agent_team = [meta_agent, serper_agent, offline_rag_websearch_agent, reporter_agent] # noqa: E501
