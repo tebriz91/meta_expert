@@ -125,7 +125,9 @@ class WebScraperAgent(ToolCallingAgent[StateT]):
             raise ValueError("URLs are missing from the tool response")
 
         if len(urls) > self.max_urls:
-            raise ValueError("URLs are missing from the tool response")
+            raise ValueError(
+                f"The number of URLs exceeds the maximum limit of {self.max_urls}"  # noqa: E501
+            )
 
         print(f"{self.name} is scraping URLs: {urls}")
 
