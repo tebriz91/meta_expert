@@ -1,4 +1,6 @@
 .files/
+fastembed_cache/
+reranker_cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

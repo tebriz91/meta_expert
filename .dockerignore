@@ -17,3 +17,4 @@ logs/
 Docs/
 agent_memory/
 fastembed_cache/
+reranker_cache/
