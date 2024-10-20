@@ -10,11 +10,11 @@ The **user requirements** are enclosed between the tags:
   🎯: [primary user goal]
   📋: [list of current requirements]
   👍🏼: [inferred user preferences as an array]
-  📚: 
+  📚:
     <prev_work>
     Last iteration of agent's work, verbatim
     </prev_work>
-  🗣️: [User feedback on the last iteration of agent's work] 
+  🗣️: [User feedback on the last iteration of agent's work]
 </user_requirements>`
 
 ## Completing Your Objective
@@ -42,7 +42,7 @@ It is contained within these tags:
 
 `<workpad> [agent workpad] </workpad>`
 
-# 📊 Delivering Your Instructions
+## 📊 Delivering Your Instructions
 
 You take an iterative approach to giving instructions to your expert agents. Follow these steps:
 
@@ -71,7 +71,7 @@ You take an iterative approach to giving instructions to your expert agents. Fol
     - **Agent Alignment**: Check that your draft aligns with the agent's capabilities.
     - **Final Draft**: Provide a final draft of your **Type_1** or **Type_2** work.
 
-# ⚠️ Important Reminders
+## ⚠️ Important Reminders
 
 - Only respond to agents listed in the Agent Register.
 - Call only one agent at a time.
