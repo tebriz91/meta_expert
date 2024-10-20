@@ -12,6 +12,7 @@ from agents.offline_rag_websearch_agent import OfflineRAGWebsearchAgent
 from agents.serper_dev_agent import SerperDevAgent
 from agents.serper_dev_shopping_agent import SerperShoppingAgent
 from agents.web_scraper_agent import WebScraperAgent
+from agents.tavily_search_agent import TavilySearchAgent
 from workflow_builders.meta_agent import build_workflow
 
 
@@ -63,6 +64,12 @@ async def start() -> None:
         model="gpt-4o-mini",
         temperature=0,
     )
+    tavily_search_agent = TavilySearchAgent(
+        name="tavily_search_agent",
+        server="openai",
+        model="gpt-4o-mini",
+        temperature=0,
+    )
     # Note reporter agent does not call llms.
     reporter_agent = ReporterAgent(
         name="reporter_agent",
@@ -100,6 +107,7 @@ async def start() -> None:
     cl.user_session.set("serper_shopping_agent", serper_shopping_agent)
     cl.user_session.set("web_scraper_agent", web_scraper_agent)
     cl.user_session.set("offline_rag_websearch_agent", offline_rag_websearch_agent)  # noqa: E501
+    cl.user_session.set("tavily_search_agent", tavily_search_agent)
     cl.user_session.set("reporter_agent", reporter_agent)
 
     instructions = "/start"
@@ -257,6 +265,7 @@ async def main(message: cl.Message) -> None:
     # offline_rag_websearch_agent = cl.user_session.get("offline_rag_websearch_agent")  # noqa: E501
     reporter_agent = cl.user_session.get("reporter_agent")
     # serper_shopping_agent = cl.user_session.get("serper_shopping_agent")
+    tavily_search_agent = cl.user_session.get("tavily_search_agent")
     chat_model = cl.user_session.get("chat_model")
     system_prompt = cl.user_session.get("system_prompt")
     conversation_history = cl.user_session.get(
@@ -286,6 +295,7 @@ async def main(message: cl.Message) -> None:
         # serper_shopping_agent,
         web_scraper_agent,
         # offline_rag_websearch_agent,
+        tavily_search_agent,
         reporter_agent,
     ]
     # agent_team = [meta_agent, serper_agent, offline_rag_websearch_agent, reporter_agent] # noqa: E501
