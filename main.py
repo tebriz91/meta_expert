@@ -149,12 +149,12 @@ def _run_workflow_sync(workflow, state, configs, progress_queue) -> None:
 
             node_output = next(iter(event.values()))
             reporter_agent_node = node_output.get("reporter_agent", "")
-            print(
-                colored(
-                    text=f"\n\nDEBUG REPORTER AGENT NODE: {reporter_agent_node}\n\n",  # noqa: E501
-                    color="cyan",
-                )
-            )
+            # print(
+            #     colored(
+            #         text=f"\n\nDEBUG REPORTER AGENT NODE: {reporter_agent_node}\n\n",  # noqa: E501
+            #         color="cyan",
+            #     )
+            # )
 
             if reporter_agent_node:
                 message = reporter_agent_node[-1].page_content
@@ -268,15 +268,15 @@ async def main(message: cl.Message) -> None:
         previous_work = state.get("reporter_agent", "No response from ReporterAgent")[  # noqa: E501
             -1
         ].page_content
-        print(
-            colored(
-                text=(
-                    f"\n\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n\n"  # noqa: E501
-                    f"Type: {type(previous_work)}\n\n"
-                ),
-                color="red",
-            )
-        )
+        # print(
+        #     colored(
+        #         text=(
+        #             f"\n\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n\n"  # noqa: E501
+        #             f"Type: {type(previous_work)}\n\n"
+        #         ),
+        #         color="red",
+        #     )
+        # )
         system_prompt = f"{system_prompt}\n\nLast message from the agent:\n<prev_work>{previous_work}</prev_work>"  # noqa: E501
 
     # Add new agents to the agent_team
@@ -352,7 +352,7 @@ async def main(message: cl.Message) -> None:
         cl.user_session.set("state", state)
         cl.user_session
 
-        print(colored(text=f"\n\nDEBUG AFTER RUN STATE: {state}\n\n", color="red"))  # noqa: E501
+        # print(colored(text=f"\n\nDEBUG AFTER RUN STATE: {state}\n\n", color="red"))  # noqa: E501
 
         await cl.Message(content=message, author="MetaExpert").send()
     else:

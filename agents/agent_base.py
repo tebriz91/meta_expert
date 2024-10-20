@@ -483,12 +483,12 @@ class MetaAgent(BaseAgent[StateT]):
         )
 
         # Write the response to the state
-        print(
-            colored(
-                text=f"DEBUG: MetaAgent response: {response}",
-                color="red",
-            )
-        )
+        # print(
+        #     colored(
+        #         text=f"DEBUG: MetaAgent response: {response}",
+        #         color="red",
+        #     )
+        # )
         self.write_to_state(state, response)
 
         # Return the output

@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 from langsmith import traceable
-from termcolor import colored
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
@@ -173,15 +172,15 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
 
         # Combine all search results into a single string
         combined_results = "\n".join(search_results_list)
-        print(
-            colored(
-                text=(
-                    f"DEBUG: {self.name} search res: {combined_results} \n\n"
-                    f"Type:{type(combined_results)}"
-                ),
-                color="green",
-            )
-        )
+        # print(
+        #     colored(
+        #         text=(
+        #             f"DEBUG: {self.name} search res: {combined_results} \n\n"
+        #             f"Type:{type(combined_results)}"
+        #         ),
+        #         color="green",
+        #     )
+        # )
 
         # Return the combined search results as a string
         return combined_results
