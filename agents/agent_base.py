@@ -174,8 +174,8 @@ class BaseAgent(ABC, Generic[StateT]):
             print(
                 colored(
                     text=(
-                        f"\n\n{self.name} read instructions from meta_agent: "
-                        f"{instructions}\n\n"
+                        f"\n{self.name} read instructions from meta_agent: "
+                        f"{instructions}\n"
                     ),
                     color="green",
                 )

@@ -175,7 +175,7 @@ class SerperDevAgent(ToolCallingAgent[StateT]):
         # print(
         #     colored(
         #         text=(
-        #             f"DEBUG: {self.name} search res: {combined_results} \n\n"
+        #             f"DEBUG: {self.name} search res: {combined_results} \n"
         #             f"Type:{type(combined_results)}"
         #         ),
         #         color="green",

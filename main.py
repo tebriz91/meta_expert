@@ -165,7 +165,7 @@ def _run_workflow_sync(workflow, state, configs, progress_queue) -> None:
 
             print(
                 colored(
-                    text=f"\n\nMeta Agent asked {agent} to: {message}\n\n",
+                    text=f"\nMeta Agent asked {agent} to: {message}\n",
                     color="green",
                 )
             )
@@ -271,8 +271,8 @@ async def main(message: cl.Message) -> None:
         # print(
         #     colored(
         #         text=(
-        #             f"\n\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n\n"  # noqa: E501
-        #             f"Type: {type(previous_work)}\n\n"
+        #             f"\nDEBUG REPORTER AGENT WORK FEEDBACK: {previous_work}\n"  # noqa: E501
+        #             f"Type: {type(previous_work)}\n"
         #         ),
         #         color="red",
         #     )
@@ -322,7 +322,7 @@ async def main(message: cl.Message) -> None:
 
         print(
             colored(
-                text=f"\n\n User Requirements: {formatted_requirements}\n\n",
+                text=f"\n User Requirements: {formatted_requirements}\n",
                 color="green",
             )
         )
@@ -352,7 +352,7 @@ async def main(message: cl.Message) -> None:
         cl.user_session.set("state", state)
         cl.user_session
 
-        # print(colored(text=f"\n\nDEBUG AFTER RUN STATE: {state}\n\n", color="red"))  # noqa: E501
+        # print(colored(text=f"\nDEBUG AFTER RUN STATE: {state}\n", color="red"))  # noqa: E501
 
         await cl.Message(content=message, author="MetaExpert").send()
     else:
