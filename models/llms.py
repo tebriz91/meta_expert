@@ -16,7 +16,7 @@ from tenacity import (
 
 from utils.logging import setup_logging
 
-setup_logging(level=logging.DEBUG)
+setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
 client = Client()
 
